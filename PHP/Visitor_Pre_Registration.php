@@ -1,7 +1,17 @@
 <?php
-session_start(); // Added session start for consistency
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
+    header("Location: index.php");
+    exit();
+}
 
 include 'db_connect.php';
+include 'partials/functions.php';
+
+// Fetch pending approvals for notifications
+$pendingApprovals = getPendingItems($conn);
 
 // Define the directory where uploaded images will be stored
 $target_dir = "uploads/visitor_pictures/";

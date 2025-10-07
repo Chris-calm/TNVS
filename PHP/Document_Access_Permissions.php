@@ -1,14 +1,17 @@
 <?php
 session_start();
 
-// Check if user is logged in (using Dashboard.php's logic)
+// Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    // Uncomment this line if you want to enforce login:
-    // header("Location: index.php");
-    // exit();
+    header("Location: index.php");
+    exit();
 }
 
 include 'db_connect.php';
+include 'partials/functions.php';
+
+// Fetch pending approvals for notifications
+$pendingApprovals = getPendingItems($conn);
 
 // --- Handle Add Permission ---
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['addPermission'])) {

@@ -1,6 +1,18 @@
 <?php
-include 'db_connect.php'; // Assume this file connects to the database using $conn
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
+    header("Location: index.php");
+    exit();
+}
+
+include 'db_connect.php';
 include 'partials/functions.php';
+
+// Fetch pending approvals for notifications
+$pendingApprovals = getPendingItems($conn);
+
 // --- 1. HANDLE ADD/EDIT FACILITY (POST Request for saveFacility) ---
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['saveFacility'])) {
     // NOTE: Changed 'id' to 'facility_id' in logic to match DB schema.

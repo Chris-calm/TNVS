@@ -3,13 +3,15 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    // If you plan to use the session username for 'uploaded_by', ensure this check is here.
-    // For now, I'll update the uploaded_by logic below to use the session if available.
-    // header("Location: index.php");
-    // exit();
+    header("Location: index.php");
+    exit();
 }
 
 include 'db_connect.php';
+include 'partials/functions.php';
+
+// Fetch pending approvals for notifications
+$pendingApprovals = getPendingItems($conn);
 
 // --- 1. HANDLE UPLOAD ---
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["docFile"])) {
