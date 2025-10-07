@@ -74,33 +74,20 @@ include 'db_connect.php';
     <ul class="dropdown-menu">
         <li><a href="../PHP/Visitor_Pre_Registration.php"><span class="text">Visitor Pre-Registration</span></a></li>
         <li><a href="../PHP/Visitor_Logs.php"><span class="text">Visitor Logs</span></a></li>
-        <li><a href="../PHP/Pass_Requests.php"><span class="text">Pass Requests</span></a></li>
-        <li><a href="../PHP/Blacklist_Watchlist.php"><span class="text">Blacklist/Watchlist</span></a></li>
+        
     </ul>
 </li>
 
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-circle-three-quarter'></i>
-        <span class="text">Statistics</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Yearly_Reports.php"><span class="text">Yearly Reports</span></a></li>
-        <li><a href="../PHP/Monthly_Reports.php"><span class="text">Monthly Reports</span></a></li>
-        <li><a href="../PHP/Weekly_Reports.php"><span class="text">Weekly Reports</span></a></li>
-        <li><a href="../PHP/Daily_Reports.php"><span class="text">Daily Reports</span></a></li>
-    </ul>
-</li>
+            <li class="side-menu-top">
+                <a href="../PHP/Statistics.php" class="dropdown-toggle">
+                    <i class='bx bxs-circle-three-quarter'></i>
+                    <span class="text">Statistics</span>
+                </a>
+            </li>
 
         </ul>
         <ul class="side-menu">
-              <li>
-                <a href="#">
-                    <i class='bx bxs-cog' ></i>
-                    <span class="text">Settings</span>
-                </a>
-            </li>
+
              <li>
                 <a href="../PHP/index.php" class="logout">
                     <i class='bx bxs-log-out-circle' ></i>

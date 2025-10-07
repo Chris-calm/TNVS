@@ -1,5 +1,103 @@
 <?php
+session_start(); // Added session start for consistency
+
 include 'db_connect.php';
+
+// --- Handle CSV Export (Function preserved) ---
+if (isset($_GET['export_csv']) && $_GET['export_csv'] == 1) {
+    // 1. Check connection first
+    if (isset($conn) && !$conn->connect_error) {
+        // Set headers for file download
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="visitor_logs_' . date('Ymd_His') . '.csv"');
+        
+        $output = fopen('php://output', 'w');
+        
+        // Output CSV Headers (Adjusted to include all relevant fields)
+        fputcsv($output, ['ID', 'Name', 'Contact', 'Purpose', 'Visit Date', 'Time In', 'Time Out', 'Person to Visit', 'Status', 'Pass ID', 'Picture Path']);
+        
+        // Fetch ALL data for export
+        $sql = "SELECT 
+                    id, name, contact, purpose, visit_date, 
+                    TIME(checkin) as time_in, TIME(checkout) as time_out, 
+                    person_to_visit, status, pass_id, picture_path 
+                FROM visitors 
+                ORDER BY id DESC";
+        
+        $result = $conn->query($sql);
+        
+        if ($result) {
+            // Output data rows
+            while ($row = $result->fetch_assoc()) {
+                // Ensure array keys match the header row above
+                fputcsv($output, $row);
+            }
+        }
+        
+        fclose($output);
+        exit;
+    }
+}
+
+// --- Handle Check-in/Check-out/Delete/Edit ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['checkin'])) {
+        $id = $_POST['id'];
+        $pass_id = $_POST['pass_id'];
+        $stmt = $conn->prepare("UPDATE visitors SET status='Checked In', checkin=NOW(), pass_id=? WHERE id=?");
+        $stmt->bind_param("si", $pass_id, $id);
+        $stmt->execute();
+    } elseif (isset($_POST['checkout'])) {
+        $id = $_POST['id'];
+        $stmt = $conn->prepare("UPDATE visitors SET status='Checked Out', checkout=NOW() WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+    } elseif (isset($_POST['delete'])) {
+        $id = $_POST['id'];
+        $stmt = $conn->prepare("DELETE FROM visitors WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+    } elseif (isset($_POST['editLog'])) {
+        $id = $_POST['id'];
+        $name = $_POST['name'];
+        $purpose = $_POST['purpose'];
+        $checkin = $_POST['checkin'];
+        $checkout = $_POST['checkout'];
+        $current_picture_path = $_POST['current_picture_path'];
+
+        $picture_path = $current_picture_path;
+
+        // Handle file upload for picture replacement
+        if (isset($_FILES['new_picture']) && $_FILES['new_picture']['error'] == UPLOAD_ERR_OK) {
+             // Define the directory where uploaded images are stored
+            $target_dir = "uploads/visitor_pictures/";
+            if (!is_dir($target_dir)) {
+                mkdir($target_dir, 0777, true);
+            }
+            $file_tmp_name = $_FILES['new_picture']['tmp_name'];
+            $file_name = basename($_FILES["new_picture"]["name"]);
+            $target_file = $target_dir . uniqid() . "_" . $file_name;
+            
+            if (move_uploaded_file($file_tmp_name, $target_file)) {
+                $picture_path = $target_file; 
+            }
+        }
+
+        $stmt = $conn->prepare("UPDATE visitors SET name=?, purpose=?, checkin=?, checkout=?, picture_path=? WHERE id=?");
+        $stmt->bind_param("sssssi", $name, $purpose, $checkin, $checkout, $picture_path, $id);
+        $stmt->execute();
+    }
+    header("Location: Visitor_Logs.php");
+    exit();
+}
+
+// --- Fetch all visitor logs ---
+$sql = "SELECT id, name, contact, purpose, DATE(visit_date) as visit_date, TIME(checkin) as time_in, TIME(checkout) as time_out, 
+               person_to_visit, status, pass_id, picture_path, checkin, checkout 
+        FROM visitors 
+        ORDER BY id DESC";
+
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -9,458 +107,278 @@ include 'db_connect.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../CSS/index.css">
-    <title>TNVS Dashboard</title>
+    <title>Visitor Logs | TNVS Dashboard</title>
+    
+    <?php include 'partials/styles.php'; ?>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-fadeIn { animation: fadeIn 0.25s ease-out; }
+    #content main {
+        background-color: transparent; /* Ensures main background is correct */
+    }
+    .cursor-pointer {
+        transition: background-color 0.15s ease-in-out;
+    }
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden">
-    <section id="sidebar">
-        <a href="" class="brand">
-    <img src="../PICTURES/Black and White Circular Art & Design Logo.png" alt="Trail Ad Corporation Logo" class="brand-logo">
-    <span class="text">TNVS</span>
-</a>
+    
+    <?php include 'partials/sidebar.php'; ?>
 
-        <ul class="side-menu top">
-            <li class="active">
-                <a href="../PHP/Dashboard.php">
-                    <i class='bx bxs-dashboard'></i>
-                    <span class="text">Dashboard</span>
-                </a>
-            </li>
-            <li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-       <i class='bx bxs-store-alt'></i>
-       <span class="text">Facilities Reservation</span>
-       <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Reserve_Room.php"><span class="text">Reserve Room</span></a></li>
-        <li><a href="../PHP/Approval_Rejection_Requests.php"><span class="text">Approval/Rejection Request</span></a></li>
-        <li><a href="../PHP/Reservation_Calendar.php"><span class="text">Reservation Calendar</span></a></li>
-        <li><a href="../PHP/Facilities_Maintenance.php"><span class="text">Facilities Maintenance</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-archive'></i>
-        <span class="text">Documents Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Upload_Document.php"><span class="text">Upload Document</span></a></li>
-        <li><a href="../PHP/Document_Access_Permissions.php"><span class="text">Document Access Permission</span></a></li>
-        <li><a href="../PHP/View_Records.php"><span class="text">View Records</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-landmark'></i>
-        <span class="text">Legal Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Contracts.php"><span class="text">Contracts</span></a></li>
-        <li><a href="../PHP/Policies.php"><span class="text">Policies</span></a></li>
-        <li><a href="../PHP/Case_Records.php"><span class="text">Case Records</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-universal-access'></i>
-        <span class="text">Visitor Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Visitor_Pre_Registration.php"><span class="text">Visitor Pre-Registration</span></a></li>
-        <li><a href="../PHP/Visitor_Logs.php"><span class="text">Visitor Logs</span></a></li>
-        <li><a href="../PHP/Pass_Requests.php"><span class="text">Pass Requests</span></a></li>
-        <li><a href="../PHP/Blacklist_Watchlist.php"><span class="text">Blacklist/Watchlist</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-circle-three-quarter'></i>
-        <span class="text">Statistics</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Yearly_Reports.php"><span class="text">Yearly Reports</span></a></li>
-        <li><a href="../PHP/Monthly_Reports.php"><span class="text">Monthly Reports</span></a></li>
-        <li><a href="../PHP/Weekly_Reports.php"><span class="text">Weekly Reports</span></a></li>
-        <li><a href="../PHP/Daily_Reports.php"><span class="text">Daily Reports</span></a></li>
-    </ul>
-</li>
-
-        </ul>
-        <ul class="side-menu">
-              <li>
-                <a href="#">
-                    <i class='bx bxs-cog' ></i>
-                    <span class="text">Settings</span>
-                </a>
-            </li>
-             <li>
-                <a href="../PHP/index.php" class="logout">
-                    <i class='bx bxs-log-out-circle' ></i>
-                    <span class="text">Logout</span>
-                </a>
-            </li>
-        </ul>
-    </section>
     <section id="content">
-        <nav>
-            <i class='bx bx-menu' ></i>
-            <a href="#" class="nav-link">Categories</a>
-            <form action="#">
-                <div class="form-input">
-                    <input type="search" placeholder="Search...">
-                    <button type="submit" class="search-btn"><i class='bx bx-search' ></i></button>
-                </div>
-            </form>
-            <a href="#" class="notification">
-                <i class='bx bxs-bell' ></i>
-                <span class="num">8</span>
-            </a>
-            <a href="#" class="profile">
-                <img src="../PICTURES/Ser.jpg">
-            </a>
-        </nav>
+        <?php include 'partials/header.php'; ?>
 
         <main>
-            <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TNVS — Visitor Logs</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-slate-800">
-  <div class="max-w-6xl mx-auto p-6">
-    <header class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold">Visitor Logs</h1>
-      <div class="flex gap-2">
-        <input id="search" type="search" placeholder="Search logs..." class="border rounded-md px-3 py-2 w-64" />
-        <select id="filterStatus" class="border rounded-md px-3 py-2">
-          <option value="all">All</option>
-          <option value="checked-in">Checked-in</option>
-          <option value="checked-out">Checked-out</option>
-        </select>
-        <button id="btnExport" class="bg-emerald-600 text-white px-4 py-2 rounded-md shadow hover:bg-emerald-500">Export CSV</button>
-        <button id="btnAdd" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-500">Add Log</button>
-      </div>
-    </header>
-
-    <div class="overflow-x-auto bg-white rounded-lg shadow">
-      <table class="min-w-full divide-y divide-slate-200">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="px-4 py-3 text-left text-sm font-medium">Visitor</th>
-            <th class="px-4 py-3 text-left text-sm font-medium">Purpose</th>
-            <th class="px-4 py-3 text-left text-sm font-medium">Check-in</th>
-            <th class="px-4 py-3 text-left text-sm font-medium">Check-out</th>
-            <th class="px-4 py-3 text-left text-sm font-medium">Status</th>
-            <th class="px-4 py-3 text-right text-sm font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="logsTbody" class="bg-white divide-y divide-slate-100"></tbody>
-      </table>
-    </div>
-
-    <div id="emptyState" class="hidden text-center py-10 text-slate-500">
-      No logs yet. Click "Add Log" to create one.
-    </div>
-
-    <!-- Add/Edit Modal -->
-    <div id="modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
-      <div class="bg-white rounded-xl w-full max-w-2xl shadow-lg p-6">
-        <header class="flex items-center justify-between mb-4">
-          <h2 id="modalTitle" class="text-lg font-medium">Add Visitor Log</h2>
-          <button id="modalClose" class="text-slate-500 hover:text-slate-700">✕</button>
-        </header>
-
-        <form id="logForm" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Visitor Name</label>
-            <input id="visitorName" required class="w-full border rounded-md px-3 py-2" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1">Purpose</label>
-            <input id="purpose" required class="w-full border rounded-md px-3 py-2" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Check-in Date</label>
-              <input id="checkinDate" type="date" required class="w-full border rounded-md px-3 py-2" />
+            <div class="head-title">
+                <div class="left">
+                    <h1>Visitor Logs</h1>
+                    <ul class="breadcrumb">
+                        <li>
+                            <a href="Dashboard.php">Dashboard</a>
+                        </li>
+                        <li><i class='bx bx-chevron-right' ></i></li>
+                        <li>
+                            <a class="active" href="Visitor_Logs.php">Visitor Logs</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Check-in Time</label>
-              <input id="checkinTime" type="time" required class="w-full border rounded-md px-3 py-2" />
+
+            <div class="max-w-7xl mx-auto p-6">
+                <header class="flex items-center justify-between mb-6">
+                    <h1 class="text-2xl font-semibold">Visitor Logs</h1>
+                    <div class="flex space-x-2">
+                        <a href="?export_csv=1" class="bg-green-600 text-white px-4 py-2 rounded-md shadow hover:bg-green-700">Export to CSV</a>
+                        <a href="Visitor_Pre_Registration.php" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-700">Pre-Registration</a>
+                    </div>
+                </header>
+
+                <div class="overflow-x-auto bg-white rounded-xl shadow-md">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Purpose</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Pass ID</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Time In</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Time Out</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Status (Click to Action)</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Other Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200" id="logsTableBody">
+                            <?php if ($result && $result->num_rows > 0): ?>
+                                <?php while ($row = $result->fetch_assoc()): ?>
+                                    <tr class="logRow">
+                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['name']) ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['purpose']) ?></td>
+                                        <td class="px-6 py-4 text-sm font-mono text-gray-800"><?= htmlspecialchars($row['pass_id'] ?? '-') ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['time_in'] ?? '-') ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['time_out'] ?? '-') ?></td>
+                                        
+                                        <td class="px-6 py-4">
+                                            <?php
+                                                $status = htmlspecialchars($row['status']);
+                                                // Use json_encode for safe JavaScript string literals, especially for names with quotes
+                                                $js_name = json_encode($row['name']); 
+                                                $id = $row['id'];
+                                                
+                                                $status_class = '';
+                                                $action_html = '';
+                                                
+                                                if ($status == 'Checked In') {
+                                                    $status_class = 'text-green-700 bg-green-100 cursor-pointer hover:bg-green-200';
+                                                    // Hidden form for Check Out submission
+                                                    $action_html = "
+                                                        <form id='form_checkout_{$id}' method='POST' onsubmit='return confirm(\"Check out " . htmlspecialchars($row['name']) . "?\")' style='display:none;'>
+                                                            <input type='hidden' name='id' value='{$id}'>
+                                                            <input type='hidden' name='checkout' value='1'>
+                                                        </form>
+                                                        <span onclick='document.getElementById(\"form_checkout_{$id}\").submit()' class='inline-block px-3 py-1 text-xs font-medium rounded-full {$status_class}' title='Click to Check Out'>
+                                                            {$status}
+                                                        </span>
+                                                    ";
+                                                } elseif ($status == 'Pre-Registered') {
+                                                    $status_class = 'text-yellow-700 bg-yellow-100 cursor-pointer hover:bg-yellow-200';
+                                                    // JS function prompts for Pass ID and submits Check In
+                                                    $action_html = "
+                                                        <span onclick='promptForCheckin({$id}, {$js_name})' class='inline-block px-3 py-1 text-xs font-medium rounded-full {$status_class}' title='Click to Check In'>
+                                                            {$status}
+                                                        </span>
+                                                    ";
+                                                } else { // Checked Out (not clickable)
+                                                    $status_class = 'text-blue-700 bg-blue-100';
+                                                    $action_html = "
+                                                        <span class='inline-block px-3 py-1 text-xs font-medium rounded-full {$status_class}'>
+                                                            {$status}
+                                                        </span>
+                                                    ";
+                                                }
+                                                echo $action_html;
+                                            ?>
+                                        </td>
+                                        
+                                        <td class="px-6 py-4 text-sm flex gap-2">
+                                            <button 
+                                                onclick="openEditModal(
+                                                    '<?= $row['id'] ?>',
+                                                    '<?= htmlspecialchars(addslashes($row['name'])) ?>',
+                                                    '<?= htmlspecialchars(addslashes($row['purpose'])) ?>',
+                                                    '<?= $row['checkin'] ?>',
+                                                    '<?= $row['checkout'] ?>',
+                                                    '<?= htmlspecialchars($row['picture_path'] ?? '') ?>'
+                                                )"
+                                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs">Edit</button>
+
+                                            <form method="POST" onsubmit="return confirm('Delete log for <?= htmlspecialchars($row['name']) ?>?')">
+                                                <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                <input type="hidden" name="delete" value="1">
+                                                <button type="submit" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-xs">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <tr><td colspan="7" class="text-center py-6 text-gray-500">No visitor logs found.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-          </div>
+            <div id="editModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[999]">
+                <div class="bg-white rounded-xl w-full max-w-lg shadow-lg p-6 animate-fadeIn">
+                    <header class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-medium">Edit Visitor Log</h2>
+                        <button id="modalClose" onclick="closeModal()" class="text-slate-500 hover:text-slate-700">✕</button>
+                    </header>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Check-out Date (optional)</label>
-              <input id="checkoutDate" type="date" class="w-full border rounded-md px-3 py-2" />
+                    <form method="POST" enctype="multipart/form-data" id="editForm" class="space-y-4">
+                        <input type="hidden" name="id" id="editId">
+                        <input type="hidden" name="editLog" value="1">
+                        <input type="hidden" name="current_picture_path" id="picturePathHidden">
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Visitor Name</label>
+                            <input name="name" id="editName" required class="w-full border rounded-md px-3 py-2" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Purpose</label>
+                            <input name="purpose" id="editPurpose" required class="w-full border rounded-md px-3 py-2" />
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Check In Time</label>
+                                <input name="checkin" id="editCheckin" type="datetime-local" class="w-full border rounded-md px-3 py-2" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Check Out Time</label>
+                                <input name="checkout" id="editCheckout" type="datetime-local" class="w-full border rounded-md px-3 py-2" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Replace Picture (Optional)</label>
+                            <div id="picturePreviewContainer" class="mb-2 hidden">
+                                <span class="text-xs text-gray-500 block mb-1">Current Picture:</span>
+                                <img id="modalPicturePreview" src="" alt="Visitor Picture" class="w-20 h-20 object-cover rounded-md border">
+                            </div>
+                            <input name="new_picture" type="file" accept="image/*" class="w-full border rounded-md px-3 py-2" />
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-3">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-md border">Cancel</button>
+                            <button type="submit" class="px-4 py-2 rounded-md bg-indigo-600 text-white">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Check-out Time (optional)</label>
-              <input id="checkoutTime" type="time" class="w-full border rounded-md px-3 py-2" />
-            </div>
-          </div>
 
-          <div class="flex justify-end gap-2">
-            <button type="button" id="cancelBtn" class="px-4 py-2 rounded-md border">Cancel</button>
-            <button type="submit" class="px-4 py-2 rounded-md bg-indigo-600 text-white">Save Log</button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <script>
+                const modal = document.getElementById('editModal');
+                const editId = document.getElementById('editId');
+                const editName = document.getElementById('editName');
+                const editPurpose = document.getElementById('editPurpose');
+                const editCheckin = document.getElementById('editCheckin');
+                const editCheckout = document.getElementById('editCheckout');
+                const picturePathHidden = document.getElementById('picturePathHidden');
+                const picturePreviewContainer = document.getElementById('picturePreviewContainer');
+                const modalPicturePreview = document.getElementById('modalPicturePreview');
 
-  </div>
 
-  <template id="rowTemplate">
-    <tr class="logRow">
-      <td class="px-4 py-3 align-top text-sm visitorNameCell"></td>
-      <td class="px-4 py-3 align-top text-sm purposeCell"></td>
-      <td class="px-4 py-3 align-top text-sm checkinCell"></td>
-      <td class="px-4 py-3 align-top text-sm checkoutCell"></td>
-      <td class="px-4 py-3 align-top text-sm statusCell"></td>
-      <td class="px-4 py-3 align-top text-sm text-right">
-        <div class="inline-flex items-center gap-2">
-          <button class="btnCheckout px-3 py-1 rounded-md border text-sm">Check-out</button>
-          <button class="btnView px-3 py-1 rounded-md border text-sm">View</button>
-          <button class="btnEdit px-3 py-1 rounded-md border text-sm">Edit</button>
-          <button class="btnDelete px-3 py-1 rounded-md border text-sm text-red-600">Delete</button>
-        </div>
-      </td>
-    </tr>
-  </template>
+                function openEditModal(id, name, purpose, checkin, checkout, picture_path) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    
+                    editId.value = id;
+                    editName.value = name;
+                    editPurpose.value = purpose;
+                    
+                    // Format datetime strings for datetime-local input
+                    editCheckin.value = checkin ? checkin.replace(" ", "T") : "";
+                    editCheckout.value = checkout ? checkout.replace(" ", "T") : "";
+                    
+                    picturePathHidden.value = picture_path; // Store the current path
 
-  <script>
-    // In-memory store
-    var logs = [];
+                    // Display picture preview in modal
+                    if (picture_path) {
+                        modalPicturePreview.src = picture_path;
+                        picturePreviewContainer.classList.remove('hidden');
+                    } else {
+                        picturePreviewContainer.classList.add('hidden');
+                    }
+                }
 
-    // Elements
-    var logsTbody = document.getElementById('logsTbody');
-    var emptyState = document.getElementById('emptyState');
-    var searchInput = document.getElementById('search');
-    var filterStatus = document.getElementById('filterStatus');
-    var btnExport = document.getElementById('btnExport');
-    var btnAdd = document.getElementById('btnAdd');
-    var modal = document.getElementById('modal');
-    var modalTitle = document.getElementById('modalTitle');
-    var modalClose = document.getElementById('modalClose');
-    var cancelBtn = document.getElementById('cancelBtn');
-    var logForm = document.getElementById('logForm');
-    var visitorNameInput = document.getElementById('visitorName');
-    var purposeInput = document.getElementById('purpose');
-    var checkinDateInput = document.getElementById('checkinDate');
-    var checkinTimeInput = document.getElementById('checkinTime');
-    var checkoutDateInput = document.getElementById('checkoutDate');
-    var checkoutTimeInput = document.getElementById('checkoutTime');
-    var rowTemplate = document.getElementById('rowTemplate');
+                function closeModal() {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+                
+                // --- NEW FUNCTIONS FOR STATUS CLICK ---
+                
+                // Function to handle Check In (requires Pass ID input)
+                function promptForCheckin(id, name) {
+                    // Name is safely passed as a JavaScript string via JSON.parse
+                    const passId = prompt(`Enter Pass ID for ${name} to Check In:`);
+                    
+                    if (passId !== null && passId.trim() !== '') {
+                        // Dynamically create and submit the Check In form
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.style.display = 'none';
 
-    var editingId = null;
+                        const idInput = document.createElement('input');
+                        idInput.type = 'hidden';
+                        idInput.name = 'id';
+                        idInput.value = id;
 
-    function nowDate() {
-      var d = new Date();
-      var yyyy = d.getFullYear();
-      var mm = String(d.getMonth()+1).padStart(2,'0');
-      var dd = String(d.getDate()).padStart(2,'0');
-      return yyyy + '-' + mm + '-' + dd;
-    }
+                        const checkinInput = document.createElement('input');
+                        checkinInput.type = 'hidden';
+                        checkinInput.name = 'checkin';
+                        checkinInput.value = '1';
 
-    function nowTime() {
-      var d = new Date();
-      var hh = String(d.getHours()).padStart(2,'0');
-      var mm = String(d.getMinutes()).padStart(2,'0');
-      return hh + ':' + mm;
-    }
+                        const passIdInput = document.createElement('input');
+                        passIdInput.type = 'hidden';
+                        passIdInput.name = 'pass_id';
+                        passIdInput.value = passId.trim();
 
-    function render() {
-      var q = searchInput.value.trim().toLowerCase();
-      var statusFilter = filterStatus.value;
-
-      var filtered = logs.filter(function(l){
-        var text = (l.name + ' ' + l.purpose + ' ' + (l.checkin || '') + ' ' + (l.checkout || '')).toLowerCase();
-        var matchesQ = text.indexOf(q) !== -1;
-        var matchesStatus = (statusFilter === 'all') ? true : ((statusFilter === 'checked-in') ? !l.checkout : !!l.checkout);
-        return matchesQ && matchesStatus;
-      });
-
-      logsTbody.innerHTML = '';
-      if (filtered.length === 0) {
-        emptyState.classList.remove('hidden');
-      } else {
-        emptyState.classList.add('hidden');
-      }
-
-      filtered.forEach(function(l){
-        var node = rowTemplate.content.cloneNode(true);
-        node.querySelector('.visitorNameCell').textContent = l.name;
-        node.querySelector('.purposeCell').textContent = l.purpose;
-        node.querySelector('.checkinCell').textContent = l.checkin || '-';
-        node.querySelector('.checkoutCell').textContent = l.checkout || '-';
-        node.querySelector('.statusCell').textContent = l.checkout ? 'Checked-out' : 'Checked-in';
-
-        var btnCheckout = node.querySelector('.btnCheckout');
-        var btnView = node.querySelector('.btnView');
-        var btnEdit = node.querySelector('.btnEdit');
-        var btnDelete = node.querySelector('.btnDelete');
-
-        // If already checked out, disable checkout button
-        if (l.checkout) {
-          btnCheckout.setAttribute('disabled','disabled');
-          btnCheckout.classList.add('opacity-50','cursor-not-allowed');
-        }
-
-        btnCheckout.addEventListener('click', function(){
-          if (!l.checkout) {
-            var d = new Date();
-            var date = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-            var time = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-            l.checkout = date + ' ' + time;
-            render();
-          }
-        });
-
-        btnView.addEventListener('click', function(){
-          alert('Visitor: ' + l.name + '\nPurpose: ' + l.purpose + '\nCheck-in: ' + (l.checkin||'-') + '\nCheck-out: ' + (l.checkout||'-'));
-        });
-
-        btnEdit.addEventListener('click', function(){
-          openModal('Edit Visitor Log', l);
-        });
-
-        btnDelete.addEventListener('click', function(){
-          if (confirm('Delete this log?')) {
-            logs = logs.filter(function(x){ return x.id !== l.id });
-            render();
-          }
-        });
-
-        logsTbody.appendChild(node);
-      });
-    }
-
-    function openModal(mode, l) {
-      editingId = l ? l.id : null;
-      modalTitle.textContent = mode;
-      if (l) {
-        visitorNameInput.value = l.name;
-        purposeInput.value = l.purpose;
-        if (l.checkin) {
-          var parts = l.checkin.split(' ');
-          checkinDateInput.value = parts[0];
-          checkinTimeInput.value = parts[1];
-        } else {
-          checkinDateInput.value = nowDate();
-          checkinTimeInput.value = nowTime();
-        }
-        if (l.checkout) {
-          var parts2 = l.checkout.split(' ');
-          checkoutDateInput.value = parts2[0];
-          checkoutTimeInput.value = parts2[1];
-        } else {
-          checkoutDateInput.value = '';
-          checkoutTimeInput.value = '';
-        }
-      } else {
-        visitorNameInput.value = '';
-        purposeInput.value = '';
-        checkinDateInput.value = nowDate();
-        checkinTimeInput.value = nowTime();
-        checkoutDateInput.value = '';
-        checkoutTimeInput.value = '';
-      }
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeModal() {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      editingId = null;
-    }
-
-    btnAdd.addEventListener('click', function(){ openModal('Add Visitor Log'); });
-    modalClose.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
-
-    logForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      var checkinVal = checkinDateInput.value && checkinTimeInput.value ? (checkinDateInput.value + ' ' + checkinTimeInput.value) : '';
-      var checkoutVal = checkoutDateInput.value && checkoutTimeInput.value ? (checkoutDateInput.value + ' ' + checkoutTimeInput.value) : '';
-
-      var payload = {
-        id: editingId || Date.now(),
-        name: visitorNameInput.value.trim(),
-        purpose: purposeInput.value.trim(),
-        checkin: checkinVal,
-        checkout: checkoutVal
-      };
-
-      if (editingId) {
-        logs = logs.map(function(item){ return item.id === editingId ? payload : item });
-      } else {
-        logs.unshift(payload);
-      }
-
-      render();
-      closeModal();
-      logForm.reset();
-    });
-
-    searchInput.addEventListener('input', function(){ render(); });
-    filterStatus.addEventListener('change', function(){ render(); });
-
-    btnExport.addEventListener('click', function(){
-      if (logs.length === 0) {
-        alert('No logs to export.');
-        return;
-      }
-
-      var headers = ['Visitor','Purpose','Check-in','Check-out','Status'];
-      var rows = logs.map(function(l){
-        return [
-          '"' + l.name.replace(/"/g,'""') + '"',
-          '"' + l.purpose.replace(/"/g,'""') + '"',
-          '"' + (l.checkin || '') + '"',
-          '"' + (l.checkout || '') + '"',
-          '"' + (l.checkout ? 'Checked-out' : 'Checked-in') + '"'
-        ].join(',');
-      });
-
-      var csv = headers.join(',') + '\n' + rows.join('\n');
-      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      var now = new Date();
-      var stamp = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
-      a.download = 'visitor_logs_' + stamp + '.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    // initial render
-    render();
-  </script>
-</body>
-</html>
+                        form.appendChild(idInput);
+                        form.appendChild(checkinInput);
+                        form.appendChild(passIdInput);
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                    } else if (passId !== null) {
+                        alert("Pass ID is required for Check In.");
+                    }
+                }
+            </script>
         </main>
     </section>
-
-
 
     <script src="../JS/script.js"></script>
 </body>

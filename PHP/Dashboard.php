@@ -1,7 +1,30 @@
 <?php
-include 'db_connect.php';
-?>
+session_start();
 
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
+    header("Location: index.php");
+    exit();
+}
+
+// Include database connection and common functions
+include 'db_connect.php';
+include 'partials/functions.php';
+
+// --- Data Fetching ---
+$totalDocuments = getTotalCount($conn, 'documents');
+$totalVisitors = getTotalCount($conn, 'visitors');
+$totalCaseRecords = getTotalCount($conn, 'case_records');
+
+// Total Approved Facilities Count (as used for the 'Total Reservations' box)
+$sql = "SELECT COUNT(*) as total FROM `facilities` WHERE status = 'Approved'";
+$result = $conn->query($sql);
+$totalReservations = $result ? $result->fetch_assoc()['total'] : 0;
+
+// Fetch the recent case records
+$recentCaseRecords = getRecentCaseRecords($conn); 
+$pendingApprovals = getPendingItems($conn);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,259 +33,146 @@ include 'db_connect.php';
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../CSS/index.css">
     <title>TNVS Dashboard</title>
+    
+    <?php include 'partials/styles.php'; ?>
+    
+    <style>
+        /* Custom styling for the fourth box-info item (Total Reservations) */
+        #content main .box-info li:nth-child(4) .bx {
+            background: var(--light-blue);      
+            color: var(--blue);
+        }
+        /* Ensure the pending approval link's text is bold */
+        #content main .table-data .todo .todo-list a p strong {
+             font-weight: 700;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden">
-    <section id="sidebar">
-        <a href="" class="brand">
-    <img src="../PICTURES/Black and White Circular Art & Design Logo.png" alt="Trail Ad Corporation Logo" class="brand-logo">
-    <span class="text">TNVS</span>
-</a>
-
-        <ul class="side-menu top">
-            <li class="active">
-                <a href="../PHP/Dashboard.php">
-                    <i class='bx bxs-dashboard'></i>
-                    <span class="text">Dashboard</span>
-                </a>
-            </li>
-            <li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-       <i class='bx bxs-store-alt'></i>
-       <span class="text">Facilities Reservation</span>
-       <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Reserve_Room.php"><span class="text">Reserve Room</span></a></li>
-        <li><a href="../PHP/Approval_Rejection_Requests.php"><span class="text">Approval/Rejection Request</span></a></li>
-        <li><a href="../PHP/Reservation_Calendar.php"><span class="text">Reservation Calendar</span></a></li>
-        <li><a href="../PHP/Facilities_Maintenance.php"><span class="text">Facilities Maintenance</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-archive'></i>
-        <span class="text">Documents Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Upload_Document.php"><span class="text">Upload Document</span></a></li>
-        <li><a href="../PHP/Document_Access_Permissions.php"><span class="text">Document Access Permission</span></a></li>
-        <li><a href="../PHP/View_Records.php"><span class="text">View Records</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-landmark'></i>
-        <span class="text">Legal Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Contracts.php"><span class="text">Contracts</span></a></li>
-        <li><a href="../PHP/Policies.php"><span class="text">Policies</span></a></li>
-        <li><a href="../PHP/Case_Records.php"><span class="text">Case Records</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-universal-access'></i>
-        <span class="text">Visitor Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Visitor_Pre_Registration.php"><span class="text">Visitor Pre-Registration</span></a></li>
-        <li><a href="../PHP/Visitor_Logs.php"><span class="text">Visitor Logs</span></a></li>
-        <li><a href="../PHP/Pass_Requests.php"><span class="text">Pass Requests</span></a></li>
-        <li><a href="../PHP/Blacklist_Watchlist.php"><span class="text">Blacklist/Watchlist</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-circle-three-quarter'></i>
-        <span class="text">Statistics</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Yearly_Reports.php"><span class="text">Yearly Reports</span></a></li>
-        <li><a href="../PHP/Monthly_Reports.php"><span class="text">Monthly Reports</span></a></li>
-        <li><a href="../PHP/Weekly_Reports.php"><span class="text">Weekly Reports</span></a></li>
-        <li><a href="../PHP/Daily_Reports.php"><span class="text">Daily Reports</span></a></li>
-    </ul>
-</li>
-
-        </ul>
-        <ul class="side-menu">
-              <li>
-                <a href="#">
-                    <i class='bx bxs-cog' ></i>
-                    <span class="text">Settings</span>
-                </a>
-            </li>
-             <li>
-                <a href="../PHP/index.php" class="logout">
-                    <i class='bx bxs-log-out-circle' ></i>
-                    <span class="text">Logout</span>
-                </a>
-            </li>
-        </ul>
-    </section>
+    
+    <?php include 'partials/sidebar.php'; ?>
+    
     <section id="content">
-        <nav>
-            <i class='bx bx-menu' ></i>
-            <a href="#" class="nav-link">Categories</a>
-            <form action="#">
-                <div class="form-input">
-                    <input type="search" placeholder="Search...">
-                    <button type="submit" class="search-btn"><i class='bx bx-search' ></i></button>
-                </div>
-            </form>
-            <a href="#" class="notification">
-                <i class='bx bxs-bell' ></i>
-                <span class="num">8</span>
-            </a>
-            <a href="#" class="profile">
-                <img src="../PICTURES/Ser.jpg">
-            </a>
-        </nav>
-
+        <?php include 'partials/header.php'; ?>
         <main>
             <div class="head-title">
                 <div class="left">
                     <h1>Dashboard</h1>
                     <ul class="breadcrumb">
-                        <li>
-                            <a href="#">Dashboard</a>
-                        </li>
-                        <li><i class='bx bxs-chevron-right' ></i></li>
-                        <li>
-                            <a class="active" href="#">Home</a>
-                        </li>
                     </ul>
                 </div>
-                <a href="#" class="btn-download">
-                    <i class='bx bxs-cloud-download' ></i>
-                    <span class="text">Download PDF</span>
-                </a>
             </div>
+
             <ul class="box-info">
                 <li>
-                    <i class='bx bxs-calendar-check' ></i>
+                    <i class='bx bxs-file-archive' ></i>
                     <span class="text">
-                        <h3>1020</h3>
-                        <p>New Passengers</p>
+                        <h3><?= $totalDocuments ?></h3>
+                        <p>Documents</p>
                     </span>
                 </li>
                 <li>
                     <i class='bx bxs-group' ></i>
                     <span class="text">
-                        <h3>2834</h3>
+                        <h3><?= $totalVisitors ?></h3>
                         <p>Visitors</p>
                     </span>
                 </li>
                 <li>
-                    <i class='bx bxs-dollar-circle' ></i>
+                    <i class='bx bxs-briefcase-alt-2' ></i>
                     <span class="text">
-                        <h3>$3873</h3>
-                        <p>Total Revenue</p>
+                        <h3><?= $totalCaseRecords ?></h3>
+                        <p>Case Records</p>
+                    </span>
+                </li>
+                 <li>
+                    <i class='bx bxs-store-alt' ></i>
+                    <span class="text">
+                        <h3><?= $totalReservations ?></h3>
+                        <p>Total Reservations</p>
                     </span>
                 </li>
             </ul>
+
             <div class="table-data">
                 <div class="order">
                     <div class="head">
-                        <h3>Recent Passengers</h3>
-                        <i class='bx bx-search' ></i>
-                        <i class='bx bx-filter' ></i>
+                        <h3>Recent Case Records</h3> 
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>User</th>
-                                <th>Date Order</th>
+                                <th>Title</th>
+                                <th>Complainant</th>
+                                <th>Respondent</th>
                                 <th>Status</th>
+                                <th>Created At</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <img src="../PICTURES/Ser.jpg">
-                                    <p>Test User</p>
-                                </td>
-                                <td>ka-six-ka-six</td>
-                                <td><span class="status pending">Pending</span></td>
-                            </tr>
-                             <tr>
-                                <td>
-                                    <img src="../PICTURES/Ser.jpg">
-                                    <p>Test User</p>
-                                </td>
-                                <td>ka-six-ka-six</td>
-                                <td><span class="status completed">Completed</span></td>
-                            </tr>
-                             <tr>
-                                <td>
-                                    <img src="../PICTURES/Ser.jpg">
-                                    <p>Test User</p>
-                                </td>
-                                <td>ka-six-ka-six</td>
-                                <td><span class="status pending">Pending</span></td>
-                            </tr>
-                             <tr>
-                                <td>
-                                    <img src="../PICTURES/Ser.jpg">
-                                    <p>Test User</p>
-                                </td>
-                                <td>ka-six-ka-six</td>
-                                <td><span class="status completed">Completed</span></td>
-                            </tr> <tr>
-                                <td>
-                                    <img src="../PICTURES/Ser.jpg">
-                                    <p>Test User</p>
-                                </td>
-                                <td>ka-six-ka-six</td>
-                                <td><span class="status process">Process</span></td>
-                            </tr>
+                            <?php if (empty($recentCaseRecords)): ?> <tr>
+                                <td colspan="5" style="text-align: center;">No recent case records found.</td> </tr>
+                            <?php else: ?>
+                                <?php foreach ($recentCaseRecords as $record): ?> <tr>
+                                    <td>
+                                        <p><?= htmlspecialchars($record['title']) ?></p>
+                                    </td>
+                                    <td>
+                                        <p><?= htmlspecialchars($record['complainant']) ?></p>
+                                    </td>
+                                    <td>
+                                        <p><?= htmlspecialchars($record['respondent']) ?></p>
+                                    </td>
+                                    <td>
+                                        <span class="status <?= getStatusClass($record['status']) ?>"><?= htmlspecialchars($record['status']) ?></span>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($record['created_at'])): ?>
+                                            <?= date('M j, Y h:i A', strtotime($record['created_at'])) ?>
+                                        <?php else: ?>
+                                            N/A
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
+
                 <div class="todo">
-                     <div class="head">
-                        <h3>Todos</h3>
-                        <i class='bx bx-plus' ></i>
-                        <i class='bx bx-filter' ></i>
+                    <div class="head">
+                        <h3>Pending Approvals (To Do)</h3>
                     </div>
                     <ul class="todo-list">
-                        <li class="completed">
-                            <p>Todo List</p>
-                            <i class='bx bx-dots-vertical' ></i>
-                        </li>
-                           <li class="completed">
-                            <p>Todo List</p>
-                            <i class='bx bx-dots-vertical' ></i>
-                        </li>
-                           <li class="not-completed">
-                            <p>Todo List</p>
-                            <i class='bx bx-dots-vertical' ></i>
-                        </li>
-                           <li class="completed">
-                            <p>Todo List</p>
-                            <i class='bx bx-dots-vertical' ></i>
-                        </li>
-                           <li class="not-completed">
-                            <p>Todo List</p>
-                            <i class='bx bx-dots-vertical' ></i>
-                        </li>
+                        <?php if (empty($pendingApprovals)): ?>
+                            <li class="completed" style="justify-content: center; border-left: 10px solid var(--blue);">
+                                <p style="font-weight: bold;">🎉 Nothing needs approval!</p>
+                                <i class='bx bx-check-circle' ></i>
+                            </li>
+                        <?php else: ?>
+                            <?php foreach ($pendingApprovals as $item): 
+                                $item_class = 'not-completed';    
+                                $item_link = !empty($item['link']) ? $item['link'] : '#';
+                                // Display the formatted created_at timestamp
+                                $date_time = date('M j, Y h:i A', strtotime($item['created_at']));
+                            ?>
+                            <li class="<?= $item_class ?>">
+                                <a href="../PHP/<?= $item_link ?>" style="flex-grow: 1; text-decoration: none; color: inherit;">
+                                    <p>
+                                        <strong><?= htmlspecialchars($item['type']) ?></strong>: Added on <?= $date_time ?>
+                                    </p>
+                                </a>
+                                <i class='bx bx-right-arrow-alt' title="Go to Approval Page"></i>
+                            </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
         </main>
     </section>
-
-
-
+    
     <script src="../JS/script.js"></script>
 </body>
 </html>
