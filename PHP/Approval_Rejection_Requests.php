@@ -37,6 +37,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['facility_id']) && iss
     $stmt->execute();
     $stmt->close();
 
+    // Set success message
+    $actionText = ($action === 'approve') ? 'approved' : 'rejected';
+    $_SESSION['approval_success'] = "Facility has been $actionText successfully.";
+
     // Redirect back to the approval requests page to refresh the list
     header("Location: Approval_Rejection_Requests.php");
     exit();
@@ -73,10 +77,15 @@ $result = $conn->query($sql);
     <section id="content">
         <?php include 'partials/header.php'; ?>
 
-        <main class="p-6">
-            <h1 class="text-3xl font-semibold text-gray-800 mb-6">Pending Facility Approval Requests</h1>
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <h1 class="text-2xl font-light text-gray-900">Pending Approvals</h1>
+                <p class="text-sm text-gray-500 mt-1">Review and approve facility requests</p>
+            </div>
 
-            <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            <!-- Minimalist Grid -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php
                 if ($result && $result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
@@ -88,27 +97,31 @@ $result = $conn->query($sql);
                         $statusClass = "bg-yellow-100 text-yellow-700 border border-yellow-300";
 
                         echo "
-                        <div class='bg-white rounded-xl shadow-md hover:shadow-xl transition transform hover:-translate-y-1 overflow-hidden animate-fadeIn'>
-                            <img src='{$picturePath}' onerror=\"this.onerror=null;this.src='https://via.placeholder.com/300x200?text=Image+Not+Found';\" alt='Facility Image' class='w-full h-48 object-cover'>
-                            <div class='p-5'>
-                                <h3 class='text-lg font-semibold text-gray-800'>".htmlspecialchars($row['name'])."</h3>
-                                <p class='text-sm text-gray-600 mt-1'>Capacity: ".htmlspecialchars($row['capacity'])."</p>
-                                <p class='text-sm text-gray-600'>Location: ".htmlspecialchars($row['location'])."</p>
-                                <p class='text-sm mt-2'><span class='px-3 py-1 rounded-full text-xs font-medium {$statusClass}'>".htmlspecialchars($row['status'])."</span></p>
-                                <p class='text-sm text-gray-600 mt-2'>Date: ".htmlspecialchars($row['available_date'])."</p>
-                                <p class='text-sm text-gray-600'>Time: ".htmlspecialchars($row['available_time'])."</p>
+                        <div class='bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group'>
+                            <div class='aspect-video overflow-hidden rounded-t-lg'>
+                                <img src='{$picturePath}' onerror=\"this.onerror=null;this.src='https://via.placeholder.com/300x200?text=Image+Not+Found';\" alt='Facility Image' class='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'>
+                            </div>
+                            <div class='p-4'>
+                                <div class='flex items-start justify-between mb-2'>
+                                    <h3 class='font-medium text-gray-900'>".htmlspecialchars($row['name'])."</h3>
+                                    <span class='px-2 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700'>Pending</span>
+                                </div>
+                                <div class='space-y-1 text-sm text-gray-500 mb-4'>
+                                    <p>".htmlspecialchars($row['capacity'])." people • ".htmlspecialchars($row['location'])."</p>
+                                    <p>".htmlspecialchars($row['available_date'])." at ".htmlspecialchars($row['available_time'])."</p>
+                                </div>
                                 
-                                <div class='flex justify-between items-center mt-4 gap-2'>
-                                    <form method='POST' onsubmit=\"return confirm('Approve facility: ".addslashes($row['name'])."?');\" class='w-1/2'>
+                                <div class='flex gap-2'>
+                                    <form method='POST' onsubmit=\"return confirm('Approve this facility?');\" class='flex-1'>
                                         <input type='hidden' name='facility_id' value='".htmlspecialchars($row['facility_id'])."'>
                                         <input type='hidden' name='action' value='approve'>
-                                        <button type='submit' class='w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition'>Approve</button>
+                                        <button type='submit' class='w-full bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-md text-xs font-medium transition-colors'>Approve</button>
                                     </form>
                                     
-                                    <form method='POST' onsubmit=\"return confirm('Reject facility: ".addslashes($row['name'])."?');\" class='w-1/2'>
+                                    <form method='POST' onsubmit=\"return confirm('Reject this facility?');\" class='flex-1'>
                                         <input type='hidden' name='facility_id' value='".htmlspecialchars($row['facility_id'])."'>
                                         <input type='hidden' name='action' value='reject'>
-                                        <button type='submit' class='w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition'>Reject</button>
+                                        <button type='submit' class='w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-md text-xs font-medium transition-colors'>Reject</button>
                                     </form>
                                 </div>
                             </div>
@@ -122,7 +135,16 @@ $result = $conn->query($sql);
         </main>
     </section>
 
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
-    <script src="../JS/modal.js"></script> 
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['approval_success'])): ?>
+            showSuccessModal('Action Completed!', '<?= addslashes($_SESSION['approval_success']) ?>');
+            <?php unset($_SESSION['approval_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

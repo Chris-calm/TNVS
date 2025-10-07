@@ -34,7 +34,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['addPermission'])) {
         }
     }
     $stmt->close();
-    header("Location: Document_Access_Permissions.php?success=1");
+    $_SESSION['permissions_success'] = "Document permissions have been added successfully.";
+    header("Location: Document_Access_Permissions.php");
     exit;
 }
 
@@ -74,7 +75,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['updatePermission'])) 
     }
     $insertStmt->close();
 
-    header("Location: Document_Access_Permissions.php?updated=1");
+    $_SESSION['permissions_success'] = "Document permissions have been updated successfully.";
+    header("Location: Document_Access_Permissions.php");
     exit;
 }
 
@@ -124,7 +126,8 @@ if (isset($_GET['deleteDocument'])) {
     $docStmt->execute();
     $docStmt->close();
 
-    header("Location: Document_Access_Permissions.php?docDeleted=1");
+    $_SESSION['permissions_success'] = "Document has been deleted successfully.";
+    header("Location: Document_Access_Permissions.php");
     exit;
 }
 
@@ -144,8 +147,9 @@ if (isset($_GET['archive'])) {
     $insertStmt->execute();
     $insertStmt->close();
     
-    header("Location: Document_Access_Permissions.php?archived=1");
-    exit();
+    $_SESSION['permissions_success'] = "Document has been archived successfully.";
+    header("Location: Document_Access_Permissions.php");
+    exit;
 }
 
 
@@ -221,20 +225,23 @@ $permissions = $conn->query("
     <section id="content">
         <?php include 'partials/header.php'; ?>
         
-        <main>
-         
-            
-            <div class="w-[95%] md:w-[90%] lg:w-[80%] mx-auto py-5">
-              
-              <div class="flex justify-between items-center mb-8">
-                <h1 class="text-3xl font-semibold text-gray-800">Document Access Permissions</h1>
-                <button onclick="document.getElementById('permissionModal').classList.remove('hidden')"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl shadow-md text-sm font-medium transition">
-                  + Add Permission
-                </button>
-              </div>
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-light text-gray-900">Document Permissions</h1>
+                        <p class="text-sm text-gray-500 mt-1">Manage document access and permissions</p>
+                    </div>
+                    <button onclick="document.getElementById('permissionModal').classList.remove('hidden')"
+                        class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Add Permission
+                    </button>
+                </div>
+            </div>
 
-              <div class="overflow-x-auto bg-white rounded-xl shadow-md">
+            <!-- Minimalist Table -->
+            <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-100">
                     <tr>

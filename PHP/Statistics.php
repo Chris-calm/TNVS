@@ -1,12 +1,21 @@
 <?php
-session_start(); // Added session start for consistency
+session_start();
 
-include 'db_connect.php'; // Make sure $conn is connected to tnvs_db
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
+    header("Location: index.php");
+    exit();
+}
+
+include 'db_connect.php';
+include 'partials/functions.php';
+
+// Fetch pending approvals for notifications
+$pendingApprovals = getPendingItems($conn);
 
 // --- Initialization and Mode Handling ---
 $currentYear = date('Y');
 $currentMonth = date('m');
-
 // Determine the report mode and the specific period
 $reportMode = isset($_GET['mode']) ? $_GET['mode'] : 'year';
 

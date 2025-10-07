@@ -57,16 +57,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("UPDATE visitors SET status='Checked In', checkin=NOW(), pass_id=? WHERE id=?");
         $stmt->bind_param("si", $pass_id, $id);
         $stmt->execute();
+        $_SESSION['logs_success'] = "Visitor has been checked in successfully with Pass ID: $pass_id";
     } elseif (isset($_POST['checkout'])) {
         $id = $_POST['id'];
         $stmt = $conn->prepare("UPDATE visitors SET status='Checked Out', checkout=NOW() WHERE id=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
+        $_SESSION['logs_success'] = "Visitor has been checked out successfully.";
     } elseif (isset($_POST['delete'])) {
         $id = $_POST['id'];
         $stmt = $conn->prepare("DELETE FROM visitors WHERE id=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
+        $_SESSION['logs_success'] = "Visitor log has been deleted successfully.";
     } elseif (isset($_POST['editLog'])) {
         $id = $_POST['id'];
         $name = $_POST['name'];
@@ -96,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("UPDATE visitors SET name=?, purpose=?, checkin=?, checkout=?, picture_path=? WHERE id=?");
         $stmt->bind_param("sssssi", $name, $purpose, $checkin, $checkout, $picture_path, $id);
         $stmt->execute();
+        $_SESSION['logs_success'] = "Visitor log for '$name' has been updated successfully.";
     }
     header("Location: Visitor_Logs.php");
     exit();
@@ -141,21 +145,6 @@ $result = $conn->query($sql);
         <?php include 'partials/header.php'; ?>
 
         <main>
-            <div class="head-title">
-                <div class="left">
-                    <h1>Visitor Logs</h1>
-                    <ul class="breadcrumb">
-                        <li>
-                            <a href="Dashboard.php">Dashboard</a>
-                        </li>
-                        <li><i class='bx bx-chevron-right' ></i></li>
-                        <li>
-                            <a class="active" href="Visitor_Logs.php">Visitor Logs</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
             <div class="max-w-7xl mx-auto p-6">
                 <header class="flex items-center justify-between mb-6">
                     <h1 class="text-2xl font-semibold">Visitor Logs</h1>
@@ -390,6 +379,16 @@ $result = $conn->query($sql);
         </main>
     </section>
 
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['logs_success'])): ?>
+            showSuccessModal('Success!', '<?= addslashes($_SESSION['logs_success']) ?>');
+            <?php unset($_SESSION['logs_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

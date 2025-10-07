@@ -28,12 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("INSERT INTO case_records (title, complainant, respondent, status, details) VALUES (?, ?, ?, ?, ?)");
             $stmt->bind_param("sssss", $title, $complainant, $respondent, $status, $details);
             $stmt->execute();
+            $_SESSION['case_success'] = "Case record '$title' has been added successfully.";
         } else {
             $stmt = $conn->prepare("UPDATE case_records SET title=?, complainant=?, respondent=?, status=?, details=? WHERE id=?");
             $stmt->bind_param("sssssi", $title, $complainant, $respondent, $status, $details, $id);
             $stmt->execute();
+            $_SESSION['case_success'] = "Case record '$title' has been updated successfully.";
         }
-        echo json_encode(["success" => true]);
+        header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
 
@@ -42,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("DELETE FROM case_records WHERE id=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
-        echo json_encode(["success" => true]);
+        $_SESSION['case_success'] = "Case record has been deleted successfully.";
+        header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
 }
@@ -80,22 +83,30 @@ $records_json = json_encode($records);
     <section id="content">
         <?php include 'partials/header.php'; ?>
 
-        <main>
-      
-
-            <div class="max-w-7xl mx-auto p-6">
-                <header class="flex items-center justify-between mb-6">
-                    <h1 class="text-2xl font-semibold">Legal Case Records</h1>
-                    <button id="btnAdd" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-500">Add Case</button>
-                </header>
-
-                <div class="mb-6 flex space-x-2">
-                    <button data-status="all" class="statusBtn px-4 py-2 border rounded-full text-sm bg-indigo-50 border-indigo-300">All</button>
-                    <button data-status="Open" class="statusBtn px-4 py-2 border rounded-full text-sm">Open</button>
-                    <button data-status="Closed" class="statusBtn px-4 py-2 border rounded-full text-sm">Closed</button>
-                    <button data-status="In Progress" class="statusBtn px-4 py-2 border rounded-full text-sm">In Progress</button>
-                    <input type="text" id="searchInput" placeholder="Search cases..." class="flex-grow max-w-xs border rounded-full px-4 py-2 text-sm ml-4">
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-light text-gray-900">Case Records</h1>
+                        <p class="text-sm text-gray-500 mt-1">Manage legal case records and documentation</p>
+                    </div>
+                    <button id="btnAdd" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Add Case
+                    </button>
                 </div>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button data-status="all" class="statusBtn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">All</button>
+                    <button data-status="Open" class="statusBtn px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Open</button>
+                    <button data-status="Closed" class="statusBtn px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Closed</button>
+                    <button data-status="In Progress" class="statusBtn px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">In Progress</button>
+                    <div class="flex-grow max-w-xs">
+                        <input type="text" id="searchInput" placeholder="Search cases..." class="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                    </div>
+                </div>
+            </div>
 
                 <div id="casesGrid" class="space-y-4">
                     </div>
@@ -104,65 +115,72 @@ $records_json = json_encode($records);
             </div>
         
             <template id="cardTemplate">
-                <article class="bg-white rounded-xl p-4 shadow hover:shadow-md transition">
+                <article class="bg-white rounded-lg border border-gray-100 p-4 hover:border-gray-200 transition-colors">
                     <div class="flex items-start justify-between">
-                        <div>
-                            <h3 class="caseTitle text-lg font-semibold"></h3>
-                            <p class="caseComplainant text-sm text-slate-600 mt-1"></p>
-                            <p class="caseRespondent text-sm text-slate-600"></p>
+                        <div class="flex-grow min-w-0">
+                            <h3 class="caseTitle font-medium text-gray-900 truncate"></h3>
+                            <p class="caseComplainant text-sm text-gray-500 mt-1"></p>
+                            <p class="caseRespondent text-sm text-gray-500"></p>
                         </div>
-                        <div class="flex gap-2 items-center">
-                            <span class="caseStatus text-xs font-medium rounded-full px-2 py-1 inline-block"></span>
-                            <button class="btnView text-sm px-2 py-1 border rounded">View</button>
-                            <button class="btnEdit text-sm px-2 py-1 border rounded">Edit</button>
-                            <button class="btnDelete text-sm px-2 py-1 border rounded text-red-600">Delete</button>
+                        <div class="flex gap-2 items-center ml-4 flex-shrink-0">
+                            <span class="caseStatus text-xs font-medium rounded-full px-2 py-1"></span>
+                            <button class="btnView p-2 text-gray-400 hover:text-blue-600 transition-colors" title="View">
+                                <i class='bx bx-show text-lg'></i>
+                            </button>
+                            <button class="btnEdit p-2 text-gray-400 hover:text-green-600 transition-colors" title="Edit">
+                                <i class='bx bx-edit text-lg'></i>
+                            </button>
+                            <button class="btnDelete p-2 text-gray-400 hover:text-red-600 transition-colors" title="Delete">
+                                <i class='bx bx-trash text-lg'></i>
+                            </button>
                         </div>
                     </div>
                 </article>
             </template>
 
 
-            <div id="modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-[999]">
-                <div class="bg-white rounded-xl w-full max-w-2xl shadow-lg p-6 animate-fadeIn">
-                    <header class="flex items-center justify-between mb-4">
-                        <h2 id="modalTitle" class="text-lg font-medium">Add Case</h2>
-                        <button id="modalClose" class="text-slate-500 hover:text-slate-700">✕</button>
-                    </header>
+            <!-- Minimalist Modal -->
+            <div id="modal" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden items-center justify-center p-4 z-[999]">
+                <div class="bg-white rounded-xl w-full max-w-lg shadow-2xl p-6 animate-fadeIn">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 id="modalTitle" class="text-xl font-medium text-gray-900">Add Case</h2>
+                        <button id="modalClose" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class='bx bx-x text-2xl'></i>
+                        </button>
+                    </div>
 
-                    <form id="caseForm" class="space-y-4">
+                    <form id="caseForm" method="POST" class="space-y-4">
                         <input type="hidden" name="action" id="actionInput" value="add">
                         <input type="hidden" name="id" id="caseId">
                         
                         <div>
-                            <label class="block text-sm font-medium mb-1">Case Title</label>
-                            <input id="titleInput" name="title" required class="w-full border rounded-md px-3 py-2" />
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Complainant</label>
-                                <input id="complainantInput" name="complainant" required class="w-full border rounded-md px-3 py-2" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Respondent</label>
-                                <input id="respondentInput" name="respondent" required class="w-full border rounded-md px-3 py-2" />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Status</label>
-                            <select id="statusInput" name="status" class="w-full border rounded-md px-3 py-2">
-                                <option value="Open">Open</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Closed">Closed</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Details</label>
-                            <textarea id="detailsInput" name="details" rows="6" class="w-full border rounded-md px-3 py-2"></textarea>
+                            <input id="titleInput" name="title" required placeholder="Case title" 
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
                         </div>
                         
-                        <div class="flex justify-end gap-2">
-                            <button type="button" id="cancelBtn" class="px-4 py-2 rounded-md border">Cancel</button>
-                            <button type="submit" class="px-4 py-2 rounded-md bg-indigo-600 text-white">Save Record</button>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input id="complainantInput" name="complainant" required placeholder="Complainant" 
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
+                            <input id="respondentInput" name="respondent" required placeholder="Respondent" 
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
+                        </div>
+                        
+                        <select id="statusInput" name="status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        
+                        <textarea id="detailsInput" name="details" rows="4" placeholder="Case details..." 
+                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" id="cancelBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit" class="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                                Save Case
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -238,22 +256,12 @@ $records_json = json_encode($records);
 
                         node.querySelector('.btnDelete').addEventListener('click', function() {
                             if (confirm('Delete this case record? This action cannot be undone.')) {
-                                fetch("", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                                    body: new URLSearchParams({ action: 'delete', id: c.id })
-                                }).then(r => r.json()).then(res => {
-                                    if(res.success){
-                                        // Remove from local array and re-render
-                                        const index = cases.findIndex(item => item.id === c.id);
-                                        if (index > -1) {
-                                            cases.splice(index, 1);
-                                        }
-                                        render();
-                                    } else {
-                                        alert('Failed to delete record.');
-                                    }
-                                });
+                                // Create a form and submit it
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.innerHTML = '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' + c.id + '">';
+                                document.body.appendChild(form);
+                                form.submit();
                             }
                         });
 
@@ -283,51 +291,12 @@ $records_json = json_encode($records);
                     editingId = null;
                     caseForm.reset();
                 }
-
                 btnAdd.addEventListener('click', function(){ openModal('Add Case'); });
                 modalClose.addEventListener('click', closeModal);
                 cancelBtn.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
 
-                caseForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-
-                    var payload = {
-                        action: actionInput.value,
-                        id: caseId.value,
-                        title: titleInput.value.trim(),
-                        complainant: complainantInput.value.trim(),
-                        respondent: respondentInput.value.trim(),
-                        status: statusInput.value,
-                        details: detailsInput.value.trim(),
-                    };
-
-                    fetch("", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: new URLSearchParams(payload)
-                    }).then(r => r.json()).then(res => {
-                        if(res.success){
-                            if(actionInput.value === 'edit'){
-                                // Update local array
-                                const index = cases.findIndex(item => item.id == payload.id);
-                                if (index > -1) {
-                                    cases[index] = { ...cases[index], ...payload };
-                                }
-                            } else {
-                                // Add to local array (needs a real ID, but this is client-side only before reload)
-                                payload.id = Date.now(); // fake id until reload
-                                cases.unshift(payload);
-                            }
-                            render();
-                            closeModal();
-                            caseForm.reset();
-                            // Optional: Reload window to get server-side generated ID and fresh data
-                            // window.location.reload(); 
-                        } else {
-                            alert('An error occurred while saving the record.');
-                        }
-                    });
-                });
+                // Form now submits normally to PHP, no AJAX needed
+                // The PHP will handle the redirect and success message
 
                 searchInput.addEventListener('input', function(){ render(); });
 
@@ -347,6 +316,16 @@ $records_json = json_encode($records);
         </main>
     </section>
 
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['case_success'])): ?>
+            showSuccessModal('Success!', '<?= addslashes($_SESSION['case_success']) ?>');
+            <?php unset($_SESSION['case_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

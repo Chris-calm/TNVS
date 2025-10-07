@@ -13,18 +13,39 @@ include 'partials/functions.php';
 // Fetch pending approvals for notifications
 $pendingApprovals = getPendingItems($conn);
 
-// --- 1. HANDLE DELETE ACTION (For Approved/Rejected Facilities Maintenance) ---
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['facility_id']) && $_POST['action'] === 'delete') {
+// --- 1. HANDLE FACILITY ACTIONS ---
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['facility_id']) && isset($_POST['action'])) {
     $facility_id = intval($_POST['facility_id']);
+    $action = $_POST['action'];
 
-    // Delete the facility record
-    $stmt = $conn->prepare("DELETE FROM facilities WHERE id=?");
-    $stmt->bind_param("i", $facility_id);
+    if ($action === 'delete') {
+        // Delete the facility record permanently
+        $stmt = $conn->prepare("DELETE FROM facilities WHERE facility_id=?");
+        $stmt->bind_param("i", $facility_id);
+    } elseif ($action === 'maintenance') {
+        // Set facility to maintenance status
+        $stmt = $conn->prepare("UPDATE facilities SET status='Under Maintenance' WHERE facility_id=?");
+        $stmt->bind_param("i", $facility_id);
+    } elseif ($action === 'reapprove') {
+        // Move rejected facility back to pending for reconsideration
+        $stmt = $conn->prepare("UPDATE facilities SET status='Pending' WHERE facility_id=?");
+        $stmt->bind_param("i", $facility_id);
+    }
+    
     $stmt->execute();
     $stmt->close();
 
+    // Set success message based on action
+    if ($action === 'delete') {
+        $_SESSION['calendar_success'] = "Facility has been deleted successfully.";
+    } elseif ($action === 'maintenance') {
+        $_SESSION['calendar_success'] = "Facility has been set to maintenance mode.";
+    } elseif ($action === 'reapprove') {
+        $_SESSION['calendar_success'] = "Facility has been sent back for reconsideration.";
+    }
+
     // Redirect back to refresh the page
-    header("Location: Facilities_Maintenance.php");
+    header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
 
@@ -66,35 +87,48 @@ if ($result && $result->num_rows > 0) {
     <section id="content">
         <?php include 'partials/header.php'; ?>
         
-        <main>
-            <div class="w-[95%] md:w-[90%] lg:w-[80%] mx-auto py-10">
-                <div class="flex justify-between items-center mb-8">
-                    <h1 class="text-3xl font-semibold text-gray-800">Facilities Maintenance</h1>
-                    </div>
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <h1 class="text-2xl font-light text-gray-900">Facility Management</h1>
+                <p class="text-sm text-gray-500 mt-1">Manage approved and rejected facilities</p>
+            </div>
                 
-                <div class="grid md:grid-cols-2 gap-8">
+            <div class="grid lg:grid-cols-2 gap-8">
                     <div>
-                        <h2 class="text-xl font-semibold text-green-700 mb-4">✅ Approved Facilities (<?php echo count($approvedFacilities); ?>)</h2>
-                        <div id="approvedGrid" class="grid sm:grid-cols-1 gap-6">
+                        <h2 class="text-lg font-medium text-gray-900 mb-6">Approved Facilities <span class="text-sm font-normal text-gray-500">(<?php echo count($approvedFacilities); ?>)</span></h2>
+                        <div class="space-y-3">
                             <?php if (empty($approvedFacilities)): ?>
-                                <p class="text-gray-500">No approved facilities found.</p>
+                                <p class="text-gray-400 text-center py-8">No approved facilities</p>
                             <?php else: ?>
                                 <?php foreach ($approvedFacilities as $row): 
                                     $picturePath = !empty($row['picture']) ? "../uploads/" . htmlspecialchars($row['picture']) : "https://via.placeholder.com/300x200?text=No+Image";
                                 ?>
-                                    <div class='bg-white rounded-xl shadow-md p-4 flex gap-4 items-center'>
-                                        <img src='<?php echo $picturePath; ?>' alt='<?php echo htmlspecialchars($row['name']); ?>' class='w-20 h-20 object-cover rounded-lg border'>
-                                        <div class="flex-grow">
-                                            <h3 class='text-lg font-semibold'><?php echo htmlspecialchars($row['name']); ?></h3>
-                                            <p class='text-sm text-gray-600'>Status: <span class="text-green-600 font-medium">Approved</span></p>
+                                    <div class='bg-white rounded-lg border border-gray-100 p-4 flex gap-4 items-center hover:border-gray-200 transition-colors'>
+                                        <div class='w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+                                            <img src='<?php echo $picturePath; ?>' alt='<?php echo htmlspecialchars($row['name']); ?>' class='w-full h-full object-cover'>
                                         </div>
-                                        <form method='POST' onsubmit="return confirm('Are you sure you want to delete this facility?');">
-                                            <input type='hidden' name='facility_id' value='<?php echo $row['id']; ?>'>
-                                            <input type='hidden' name='action' value='delete'>
-                                            <button type='submit' class='text-red-500 hover:text-red-700 p-2 rounded-full transition'>
-                                                <i class='bx bx-trash text-xl'></i>
-                                            </button>
-                                        </form>
+                                        <div class="flex-grow min-w-0">
+                                            <h3 class='font-medium text-gray-900 truncate'><?php echo htmlspecialchars($row['name']); ?></h3>
+                                            <p class='text-sm text-gray-500'><?php echo $row['capacity']; ?> people • <?php echo htmlspecialchars($row['location']); ?></p>
+                                            <span class='inline-block mt-1 px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700'>Approved</span>
+                                        </div>
+                                        <div class="flex gap-1 flex-shrink-0">
+                                            <form method='POST' onsubmit="return confirm('Set to maintenance?');">
+                                                <input type='hidden' name='facility_id' value='<?php echo $row['facility_id']; ?>'>
+                                                <input type='hidden' name='action' value='maintenance'>
+                                                <button type='submit' class='p-2 text-gray-400 hover:text-yellow-600 transition-colors' title="Set to Maintenance">
+                                                    <i class='bx bx-wrench text-lg'></i>
+                                                </button>
+                                            </form>
+                                            <form method='POST' onsubmit="return confirm('Delete permanently?');">
+                                                <input type='hidden' name='facility_id' value='<?php echo $row['facility_id']; ?>'>
+                                                <input type='hidden' name='action' value='delete'>
+                                                <button type='submit' class='p-2 text-gray-400 hover:text-red-600 transition-colors' title="Delete">
+                                                    <i class='bx bx-trash text-lg'></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -102,27 +136,39 @@ if ($result && $result->num_rows > 0) {
                     </div>
 
                     <div>
-                        <h2 class="text-xl font-semibold text-red-700 mb-4">❌ Rejected Facilities (<?php echo count($rejectedFacilities); ?>)</h2>
-                        <div id="rejectedGrid" class="grid sm:grid-cols-1 gap-6">
+                        <h2 class="text-lg font-medium text-gray-900 mb-6">Rejected Facilities <span class="text-sm font-normal text-gray-500">(<?php echo count($rejectedFacilities); ?>)</span></h2>
+                        <div class="space-y-3">
                             <?php if (empty($rejectedFacilities)): ?>
-                                <p class="text-gray-500">No rejected facilities found.</p>
+                                <p class="text-gray-400 text-center py-8">No rejected facilities</p>
                             <?php else: ?>
                                 <?php foreach ($rejectedFacilities as $row): 
                                     $picturePath = !empty($row['picture']) ? "../uploads/" . htmlspecialchars($row['picture']) : "https://via.placeholder.com/300x200?text=No+Image";
                                 ?>
-                                    <div class='bg-white rounded-xl shadow-md p-4 flex gap-4 items-center'>
-                                        <img src='<?php echo $picturePath; ?>' alt='<?php echo htmlspecialchars($row['name']); ?>' class='w-20 h-20 object-cover rounded-lg border'>
-                                        <div class="flex-grow">
-                                            <h3 class='text-lg font-semibold'><?php echo htmlspecialchars($row['name']); ?></h3>
-                                            <p class='text-sm text-gray-600'>Status: <span class="text-red-600 font-medium">Rejected</span></p>
+                                    <div class='bg-white rounded-lg border border-gray-100 p-4 flex gap-4 items-center hover:border-gray-200 transition-colors'>
+                                        <div class='w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+                                            <img src='<?php echo $picturePath; ?>' alt='<?php echo htmlspecialchars($row['name']); ?>' class='w-full h-full object-cover'>
                                         </div>
-                                        <form method='POST' onsubmit="return confirm('Are you sure you want to permanently delete this facility?');">
-                                            <input type='hidden' name='facility_id' value='<?php echo $row['id']; ?>'>
-                                            <input type='hidden' name='action' value='delete'>
-                                            <button type='submit' class='text-red-500 hover:text-red-700 p-2 rounded-full transition'>
-                                                <i class='bx bx-trash text-xl'></i>
-                                            </button>
-                                        </form>
+                                        <div class="flex-grow min-w-0">
+                                            <h3 class='font-medium text-gray-900 truncate'><?php echo htmlspecialchars($row['name']); ?></h3>
+                                            <p class='text-sm text-gray-500'><?php echo $row['capacity']; ?> people • <?php echo htmlspecialchars($row['location']); ?></p>
+                                            <span class='inline-block mt-1 px-2 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700'>Rejected</span>
+                                        </div>
+                                        <div class="flex gap-1 flex-shrink-0">
+                                            <form method='POST' onsubmit="return confirm('Reconsider for approval?');">
+                                                <input type='hidden' name='facility_id' value='<?php echo $row['facility_id']; ?>'>
+                                                <input type='hidden' name='action' value='reapprove'>
+                                                <button type='submit' class='p-2 text-gray-400 hover:text-blue-600 transition-colors' title="Reconsider">
+                                                    <i class='bx bx-refresh text-lg'></i>
+                                                </button>
+                                            </form>
+                                            <form method='POST' onsubmit="return confirm('Delete permanently?');">
+                                                <input type='hidden' name='facility_id' value='<?php echo $row['facility_id']; ?>'>
+                                                <input type='hidden' name='action' value='delete'>
+                                                <button type='submit' class='p-2 text-gray-400 hover:text-red-600 transition-colors' title="Delete">
+                                                    <i class='bx bx-trash text-lg'></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -134,6 +180,16 @@ if ($result && $result->num_rows > 0) {
             </main>
     </section>
 
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['calendar_success'])): ?>
+            showSuccessModal('Action Completed!', '<?= addslashes($_SESSION['calendar_success']) ?>');
+            <?php unset($_SESSION['calendar_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

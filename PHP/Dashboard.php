@@ -32,6 +32,7 @@ $pendingApprovals = getPendingItems($conn);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../CSS/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <title>TNVS Dashboard</title>
     
     <?php include 'partials/styles.php'; ?>
@@ -49,130 +50,171 @@ $pendingApprovals = getPendingItems($conn);
     </style>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden">
-    
     <?php include 'partials/sidebar.php'; ?>
     
     <section id="content">
         <?php include 'partials/header.php'; ?>
-        <main>
-            <div class="head-title">
-                <div class="left">
-                    <h1>Dashboard</h1>
-                    <ul class="breadcrumb">
-                    </ul>
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <h1 class="text-2xl font-light text-gray-900">Dashboard</h1>
+                <p class="text-sm text-gray-500 mt-1">Overview of your TNVS system</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white rounded-lg border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Documents</p>
+                            <p class="text-2xl font-light text-gray-900"><?= $totalDocuments ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <i class='bx bxs-file-archive text-blue-600 text-xl'></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Visitors</p>
+                            <p class="text-2xl font-light text-gray-900"><?= $totalVisitors ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                            <i class='bx bxs-group text-green-600 text-xl'></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Case Records</p>
+                            <p class="text-2xl font-light text-gray-900"><?= $totalCaseRecords ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                            <i class='bx bxs-briefcase-alt-2 text-purple-600 text-xl'></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Reservations</p>
+                            <p class="text-2xl font-light text-gray-900"><?= $totalReservations ?></p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
+                            <i class='bx bxs-store-alt text-orange-600 text-xl'></i>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <ul class="box-info">
-                <li>
-                    <i class='bx bxs-file-archive' ></i>
-                    <span class="text">
-                        <h3><?= $totalDocuments ?></h3>
-                        <p>Documents</p>
-                    </span>
-                </li>
-                <li>
-                    <i class='bx bxs-group' ></i>
-                    <span class="text">
-                        <h3><?= $totalVisitors ?></h3>
-                        <p>Visitors</p>
-                    </span>
-                </li>
-                <li>
-                    <i class='bx bxs-briefcase-alt-2' ></i>
-                    <span class="text">
-                        <h3><?= $totalCaseRecords ?></h3>
-                        <p>Case Records</p>
-                    </span>
-                </li>
-                 <li>
-                    <i class='bx bxs-store-alt' ></i>
-                    <span class="text">
-                        <h3><?= $totalReservations ?></h3>
-                        <p>Total Reservations</p>
-                    </span>
-                </li>
-            </ul>
-
-            <div class="table-data">
-                <div class="order">
-                    <div class="head">
-                        <h3>Recent Case Records</h3> 
+            <!-- Content Grid -->
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Recent Case Records -->
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="text-lg font-medium text-gray-900">Recent Case Records</h3>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Complainant</th>
-                                <th>Respondent</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($recentCaseRecords)): ?> <tr>
-                                <td colspan="5" style="text-align: center;">No recent case records found.</td> </tr>
-                            <?php else: ?>
-                                <?php foreach ($recentCaseRecords as $record): ?> <tr>
-                                    <td>
-                                        <p><?= htmlspecialchars($record['title']) ?></p>
-                                    </td>
-                                    <td>
-                                        <p><?= htmlspecialchars($record['complainant']) ?></p>
-                                    </td>
-                                    <td>
-                                        <p><?= htmlspecialchars($record['respondent']) ?></p>
-                                    </td>
-                                    <td>
-                                        <span class="status <?= getStatusClass($record['status']) ?>"><?= htmlspecialchars($record['status']) ?></span>
-                                    </td>
-                                    <td>
-                                        <?php if (!empty($record['created_at'])): ?>
-                                            <?= date('M j, Y h:i A', strtotime($record['created_at'])) ?>
-                                        <?php else: ?>
-                                            N/A
-                                        <?php endif; ?>
-                                    </td>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complainant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Respondent</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                                 </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <?php if (empty($recentCaseRecords)): ?>
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">No recent case records found.</td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($recentCaseRecords as $record): ?>
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($record['title']) ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <?= htmlspecialchars($record['complainant']) ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <?= htmlspecialchars($record['respondent']) ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+                                                    <?= htmlspecialchars($record['status']) ?>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <?php if (!empty($record['created_at'])): ?>
+                                                    <?= date('M j, Y', strtotime($record['created_at'])) ?>
+                                                <?php else: ?>
+                                                    N/A
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="todo">
-                    <div class="head">
-                        <h3>Pending Approvals (To Do)</h3>
+                <!-- Pending Approvals -->
+                <div class="bg-white rounded-lg border border-gray-100">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="text-lg font-medium text-gray-900">Pending Approvals</h3>
                     </div>
-                    <ul class="todo-list">
+                    <div class="p-6">
                         <?php if (empty($pendingApprovals)): ?>
-                            <li class="completed" style="justify-content: center; border-left: 10px solid var(--blue);">
-                                <p style="font-weight: bold;">🎉 Nothing needs approval!</p>
-                                <i class='bx bx-check-circle' ></i>
-                            </li>
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class='bx bx-check-circle text-green-600 text-2xl'></i>
+                                </div>
+                                <p class="text-gray-500 font-medium">All caught up!</p>
+                                <p class="text-sm text-gray-400 mt-1">No pending approvals</p>
+                            </div>
                         <?php else: ?>
-                            <?php foreach ($pendingApprovals as $item): 
-                                $item_class = 'not-completed';    
-                                $item_link = !empty($item['link']) ? $item['link'] : '#';
-                                // Display the formatted created_at timestamp
-                                $date_time = date('M j, Y h:i A', strtotime($item['created_at']));
-                            ?>
-                            <li class="<?= $item_class ?>">
-                                <a href="../PHP/<?= $item_link ?>" style="flex-grow: 1; text-decoration: none; color: inherit;">
-                                    <p>
-                                        <strong><?= htmlspecialchars($item['type']) ?></strong>: Added on <?= $date_time ?>
-                                    </p>
-                                </a>
-                                <i class='bx bx-right-arrow-alt' title="Go to Approval Page"></i>
-                            </li>
-                            <?php endforeach; ?>
+                            <div class="space-y-3">
+                                <?php foreach ($pendingApprovals as $item): 
+                                    $item_link = !empty($item['link']) ? $item['link'] : '#';
+                                    $date_time = date('M j, Y', strtotime($item['created_at']));
+                                ?>
+                                    <a href="../PHP/<?= $item_link ?>" class="block p-4 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors group">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="font-medium text-gray-900"><?= htmlspecialchars($item['type']) ?></p>
+                                                <p class="text-sm text-gray-500">Added on <?= $date_time ?></p>
+                                            </div>
+                                            <i class='bx bx-right-arrow-alt text-gray-400 group-hover:text-gray-600 transition-colors'></i>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
                         <?php endif; ?>
-                    </ul>
+                    </div>
                 </div>
             </div>
         </main>
     </section>
     
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+    
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['dashboard_success'])): ?>
+            showSuccessModal('Welcome!', '<?= addslashes($_SESSION['dashboard_success']) ?>');
+            <?php unset($_SESSION['dashboard_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

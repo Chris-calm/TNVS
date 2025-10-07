@@ -36,16 +36,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["docFile"])) {
     $webPath = $webDir . $filename;
 
     if (move_uploaded_file($file["tmp_name"], $targetPath)) {
-        // Ensure you have an 'uploaded_at' column with a default of CURRENT_TIMESTAMP in your DB
         $stmt = $conn->prepare("INSERT INTO documents (title, filename, filepath, uploaded_by) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("ssss", $title, $filename, $webPath, $uploaded_by);
         $stmt->execute();
         $stmt->close();
 
-        header("Location: Upload_Document.php?success=1");
+        $_SESSION['upload_success'] = "Document '$title' has been uploaded successfully.";
+        header("Location: Upload_Document.php");
         exit;
     } else {
-        header("Location: Upload_Document.php?error=upload");
+        $_SESSION['upload_error'] = "Error uploading file. Please try again.";
+        header("Location: Upload_Document.php");
         exit;
     }
 }
@@ -94,50 +95,49 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
     <section id="content">
         <?php include 'partials/header.php'; ?>
         
-        <main>
-            <div class="head-title">
-            <div class="page-container w-[95%] md:w-[90%] lg:w-[80%]">
-                <div class="flex justify-between items-center mb-8">
-                    <h1 class="text-3xl font-semibold text-gray-800">📂 Upload Documents</h1>
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-light text-gray-900">Documents</h1>
+                        <p class="text-sm text-gray-500 mt-1">Upload and manage your documents</p>
+                    </div>
                     <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl shadow-md text-sm font-medium transition">
-                        + Upload Document
+                        class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Upload Document
                     </button>
                 </div>
+            </div>
 
-                <?php if (isset($_GET['success'])): ?>
-                    <div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">✅ Document uploaded successfully!</div>
-                <?php elseif (isset($_GET['error'])): ?>
-                    <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">❌ Error uploading file. Try again.</div>
-                <?php endif; ?>
-
-                <div class="overflow-x-auto bg-white rounded-xl shadow-md">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Document Title</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Uploaded By</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Date</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
+            <!-- Minimalist Table -->
+            <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
                             <?php if ($result->num_rows > 0) { ?>
                                 <?php while($row = $result->fetch_assoc()) { ?>
-                                    <tr class="document-row" onclick="openPreview('<?= htmlspecialchars($row['filepath']) ?>', '<?= htmlspecialchars($row['filename']) ?>')">
-                                        <td class="px-6 py-4 text-sm text-gray-700 font-medium hover:text-blue-600 transition">
+                                    <tr class="hover:bg-gray-50 cursor-pointer transition-colors" onclick="openPreview('<?= htmlspecialchars($row['filepath']) ?>', '<?= htmlspecialchars($row['filename']) ?>')">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
                                             <?= htmlspecialchars($row['title']) ?>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['uploaded_by']) ?></td>
-                                        <td class="px-6 py-4 text-sm text-gray-700">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($row['uploaded_by']) ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <?php if (!empty($row['uploaded_at'])): ?>
-                                                <?= date('M j, Y h:i A', strtotime($row['uploaded_at'])) ?>
+                                                <?= date('M j, Y', strtotime($row['uploaded_at'])) ?>
                                             <?php else: ?>
                                                 N/A
                                             <?php endif; ?>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-700">
-                                            <i class='bx bx-search-alt text-xl text-blue-500 hover:text-blue-700'></i>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                            <i class='bx bx-show text-lg hover:text-blue-600 transition-colors'></i>
                                         </td>
                                     </tr>
                                 <?php } ?>
@@ -149,16 +149,27 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
                 </div>
             </div>
 
-            <div id="uploadModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div class="bg-white w-[95%] max-w-lg rounded-2xl shadow-xl p-8 relative">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Upload Document</h2>
-                    <form method="POST" enctype="multipart/form-data" class="space-y-5">
-                        <input type="text" name="docTitle" placeholder="Document Title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5" required>
-                        <input type="file" name="docFile" class="w-full" accept=".png,.jpg,.jpeg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" required>
-                        <div class="flex justify-end gap-4 pt-5">
+            <!-- Minimalist Upload Modal -->
+            <div id="uploadModal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+                <div class="bg-white w-[95%] max-w-md rounded-xl shadow-2xl p-6 relative">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-medium text-gray-900">Upload Document</h2>
+                        <button type="button" onclick="document.getElementById('uploadModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class='bx bx-x text-2xl'></i>
+                        </button>
+                    </div>
+                    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                        <input type="text" name="docTitle" placeholder="Document title" 
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" required>
+                        <div class="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
+                            <input type="file" name="docFile" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100" 
+                                   accept=".png,.jpg,.jpeg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" required>
+                            <p class="text-xs text-gray-400 mt-2">PDF, DOC, XLS, PPT, Images</p>
+                        </div>
+                        <div class="flex gap-3 pt-4">
                             <button type="button" onclick="document.getElementById('uploadModal').classList.add('hidden')"
-                                class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm transition">Cancel</button>
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm transition">Upload</button>
+                                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+                            <button type="submit" class="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2 rounded-lg text-sm font-medium transition-colors">Upload</button>
                         </div>
                     </form>
                 </div>
@@ -219,6 +230,20 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
           viewModal.classList.remove("hidden");
         }
     </script>
+
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['upload_success'])): ?>
+            showSuccessModal('Upload Complete!', '<?= addslashes($_SESSION['upload_success']) ?>');
+            <?php unset($_SESSION['upload_success']); ?>
+        <?php elseif (isset($_SESSION['upload_error'])): ?>
+            showSuccessModal('Upload Failed', '<?= addslashes($_SESSION['upload_error']) ?>');
+            <?php unset($_SESSION['upload_error']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

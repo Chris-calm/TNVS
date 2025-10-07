@@ -1,5 +1,17 @@
 <?php
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
+    header("Location: index.php");
+    exit();
+}
+
 include 'db_connect.php';
+include 'partials/functions.php';
+
+// Fetch pending approvals for notifications
+$pendingApprovals = getPendingItems($conn);
 ?>
 
 <!DOCTYPE html>
@@ -9,118 +21,165 @@ include 'db_connect.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../CSS/index.css">
-    <title>TNVS Dashboard</title>
+    <title>Settings | TNVS Dashboard</title>
+    
+    <?php include 'partials/styles.php'; ?>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+    #content main {
+        background-color: transparent;
+    }
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden">
-    <section id="sidebar">
-        <a href="" class="brand">
-    <img src="../PICTURES/Black and White Circular Art & Design Logo.png" alt="Trail Ad Corporation Logo" class="brand-logo">
-    <span class="text">TNVS</span>
-</a>
-
-        <ul class="side-menu top">
-            <li class="active">
-                <a href="../PHP/Dashboard.php">
-                    <i class='bx bxs-dashboard'></i>
-                    <span class="text">Dashboard</span>
-                </a>
-            </li>
-            <li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-       <i class='bx bxs-store-alt'></i>
-       <span class="text">Facilities Reservation</span>
-       <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Reserve_Room.php"><span class="text">Reserve Room</span></a></li>
-        <li><a href="../PHP/Approval_Rejection_Requests.php"><span class="text">Approval/Rejection Request</span></a></li>
-        <li><a href="../PHP/Reservation_Calendar.php"><span class="text">Reservation Calendar</span></a></li>
-        <li><a href="../PHP/Facilities_Maintenance.php"><span class="text">Facilities Maintenance</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-archive'></i>
-        <span class="text">Documents Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Upload_Document.php"><span class="text">Upload Document</span></a></li>
-        <li><a href="../PHP/Document_Access_Permissions.php"><span class="text">Document Access Permission</span></a></li>
-        <li><a href="../PHP/View_Records.php"><span class="text">View Records</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-landmark'></i>
-        <span class="text">Legal Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Contracts.php"><span class="text">Contracts</span></a></li>
-        <li><a href="../PHP/Policies.php"><span class="text">Policies</span></a></li>
-        <li><a href="../PHP/Case_Records.php"><span class="text">Case Records</span></a></li>
-    </ul>
-</li>
-
-<li class="dropdown">
-    <a href="#" class="dropdown-toggle">
-        <i class='bx bxs-universal-access'></i>
-        <span class="text">Visitor Management</span>
-        <i class='bx bx-chevron-down arrow'></i>
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="../PHP/Visitor_Pre_Registration.php"><span class="text">Visitor Pre-Registration</span></a></li>
-        <li><a href="../PHP/Visitor_Logs.php"><span class="text">Visitor Logs</span></a></li>
-        
-
-    </ul>
-</li>
-
-            <li class="side-menu-top">
-                <a href="../PHP/Statistics.php" class="dropdown-toggle">
-                    <i class='bx bxs-circle-three-quarter'></i>
-                    <span class="text">Statistics</span>
-                </a>
-            </li>
-        </ul>
-        <ul class="side-menu">
-
-             <li>
-                <a href="../PHP/index.php" class="logout">
-                    <i class='bx bxs-log-out-circle' ></i>
-                    <span class="text">Logout</span>
-                </a>
-            </li>
-        </ul>
-    </section>
+    
+    <?php include 'partials/sidebar.php'; ?>
+    
     <section id="content">
-        <nav>
-            <i class='bx bx-menu' ></i>
-            <a href="#" class="nav-link">Categories</a>
-            <form action="#">
-                <div class="form-input">
-                    <input type="search" placeholder="Search...">
-                    <button type="submit" class="search-btn"><i class='bx bx-search' ></i></button>
-                </div>
-            </form>
-            <a href="#" class="notification">
-                <i class='bx bxs-bell' ></i>
-                <span class="num">8</span>
-            </a>
-            <a href="#" class="profile">
-                <img src="../PICTURES/Ser.jpg">
-            </a>
-        </nav>
-
+        <?php include 'partials/header.php'; ?>
+        
         <main>
+            <div class="max-w-4xl mx-auto p-6">
+                <h1 class="text-3xl font-bold text-gray-800 mb-8">Settings</h1>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Profile Settings -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class='bx bx-user mr-2'></i>
+                            Profile Settings
+                        </h2>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                <input type="text" value="<?= htmlspecialchars($_SESSION['username']) ?>" class="w-full border rounded-lg px-3 py-2" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <input type="text" value="<?= str_replace('_', ' ', htmlspecialchars($_SESSION['role'])) ?>" class="w-full border rounded-lg px-3 py-2" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" placeholder="user@example.com" class="w-full border rounded-lg px-3 py-2">
+                            </div>
+                            <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                Update Profile
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class='bx bx-shield mr-2'></i>
+                            Security Settings
+                        </h2>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                                <input type="password" class="w-full border rounded-lg px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                                <input type="password" class="w-full border rounded-lg px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                                <input type="password" class="w-full border rounded-lg px-3 py-2">
+                            </div>
+                            <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                Change Password
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class='bx bx-bell mr-2'></i>
+                            Notification Settings
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Email Notifications</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Push Notifications</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">SMS Notifications</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class='bx bx-cog mr-2'></i>
+                            System Settings
+                        </h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Theme</label>
+                                <select class="w-full border rounded-lg px-3 py-2">
+                                    <option>Light Mode</option>
+                                    <option>Dark Mode</option>
+                                    <option>Auto</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                                <select class="w-full border rounded-lg px-3 py-2">
+                                    <option>English</option>
+                                    <option>Filipino</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                                <select class="w-full border rounded-lg px-3 py-2">
+                                    <option>Asia/Manila</option>
+                                    <option>UTC</option>
+                                </select>
+                            </div>
+                            <button type="button" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="bg-red-50 border border-red-200 rounded-xl p-6 mt-6">
+                    <h2 class="text-xl font-semibold text-red-800 mb-4 flex items-center">
+                        <i class='bx bx-error mr-2'></i>
+                        Danger Zone
+                    </h2>
+                    <p class="text-red-700 mb-4">These actions are irreversible. Please be careful.</p>
+                    <div class="flex gap-4">
+                        <button type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                            Clear All Data
+                        </button>
+                        <button type="button" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <script src="../JS/script.js"></script>
         </main>
     </section>
-
-
-
-    <script src="../JS/script.js"></script>
 </body>
 </html>

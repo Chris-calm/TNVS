@@ -42,10 +42,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['saveFacility'])) {
         }
         $stmt->execute();
     } else {
-        // Add facility
-        $stmt = $conn->prepare("INSERT INTO facilities (name, capacity, location, available_date, available_time, picture, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sisssss", $name, $capacity, $location, $date, $time, $picture, $status);
+        // Add facility - Always set status to 'Pending' for approval workflow
+        $stmt = $conn->prepare("INSERT INTO facilities (name, capacity, location, available_date, available_time, picture, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
+        $stmt->bind_param("sissss", $name, $capacity, $location, $date, $time, $picture);
         $stmt->execute();
+        
+        // Set success message for new facility
+        $_SESSION['facility_success'] = "Facility '$name' has been submitted and is pending approval.";
     }
     
     if (isset($stmt)) {
@@ -54,7 +57,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['saveFacility'])) {
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
-
 
 // --- 2. HANDLE DELETE FACILITY (POST Request for delete action) ---
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -145,53 +147,69 @@ $result = $conn->query($sql);
 </head>
 <body class="bg-gray-50">
 
-  <div class="w-[95%] md:w-[90%] lg:w-[80%] mx-auto py-10">
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-semibold text-gray-800">Facilities</h1>
-      <button id="openModal" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl shadow-md text-sm font-medium transition">
-        + Add Facility
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Minimalist Header -->
+    <div class="flex justify-between items-center mb-12">
+      <div>
+        <h1 class="text-2xl font-light text-gray-900">Facilities</h1>
+        <p class="text-sm text-gray-500 mt-1">Manage your facility inventory</p>
+      </div>
+      <button id="openModal" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+        Add Facility
       </button>
     </div>
 
-    <div id="facilityGrid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+
+
+    <!-- Minimalist Facility Grid -->
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       <?php if ($result->num_rows > 0): ?>
         <?php while($row = $result->fetch_assoc()): ?>
-          <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition transform hover:-translate-y-1 overflow-hidden">
-            <img src="../uploads/<?php echo htmlspecialchars($row['picture']); ?>" alt="Facility" class="w-full h-48 object-cover">
-            <div class="p-5">
-              <h3 class="text-lg font-semibold text-gray-800"><?php echo htmlspecialchars($row['name']); ?></h3>
-              <p class="text-sm text-gray-600 mt-1">Capacity: <?php echo $row['capacity']; ?></p>
-              <p class="text-sm text-gray-600">Location: <?php echo htmlspecialchars($row['location']); ?></p>
-              <p class="text-sm text-gray-600">Status: <?php echo htmlspecialchars($row['status']); ?></p>
-              <p class="text-sm text-gray-600">Date: <?php echo $row['available_date']; ?></p>
-              <p class="text-sm text-gray-600">Time: <?php echo $row['available_time']; ?></p>
-              <div class="flex justify-between items-center mt-4 gap-10">
-                <div class="flex gap-4">
-<button
-    class="bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1.5 rounded-lg text-xs font-medium transition editFacility"
-    data-id="<?= $row['facility_id'] ?>" 
-    data-name="<?= htmlspecialchars($row['name']) ?>"
-    data-capacity="<?= $row['capacity'] ?>"
-    data-location="<?= htmlspecialchars($row['location']) ?>"
-    data-status="<?= htmlspecialchars($row['status']) ?>"
-    data-date="<?= $row['available_date'] ?>"
-    data-time="<?= $row['available_time'] ?>"
-    data-picture="../uploads/<?= htmlspecialchars($row['picture'] ?? '') ?>"
->
-    ✎ Edit
-</button>
+          <div class="bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group">
+            <div class="aspect-video overflow-hidden rounded-t-lg">
+              <img src="../uploads/<?php echo htmlspecialchars($row['picture']); ?>" alt="Facility" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            </div>
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="font-medium text-gray-900"><?php echo htmlspecialchars($row['name']); ?></h3>
+                <span class="px-2 py-1 rounded-full text-xs font-medium
+                  <?php 
+                    switch($row['status']) {
+                      case 'Approved': echo 'bg-green-50 text-green-700'; break;
+                      case 'Rejected': echo 'bg-red-50 text-red-700'; break;
+                      case 'Pending': echo 'bg-yellow-50 text-yellow-700'; break;
+                      default: echo 'bg-gray-50 text-gray-700';
+                    }
+                  ?>">
+                  <?php echo htmlspecialchars($row['status']); ?>
+                </span>
+              </div>
+              <div class="space-y-1 text-sm text-gray-500 mb-4">
+                <p><?php echo $row['capacity']; ?> people • <?php echo htmlspecialchars($row['location']); ?></p>
+                <p><?php echo $row['available_date']; ?> at <?php echo $row['available_time']; ?></p>
+              </div>
+              <div class="flex gap-2">
+                <button
+                    class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-md text-xs font-medium transition-colors editFacility"
+                    data-id="<?= $row['facility_id'] ?>" 
+                    data-name="<?= htmlspecialchars($row['name']) ?>"
+                    data-capacity="<?= $row['capacity'] ?>"
+                    data-location="<?= htmlspecialchars($row['location']) ?>"
+                    data-status="<?= htmlspecialchars($row['status']) ?>"
+                    data-date="<?= $row['available_date'] ?>"
+                    data-time="<?= $row['available_time'] ?>"
+                    data-picture="../uploads/<?= htmlspecialchars($row['picture'] ?? '') ?>">
+                    Edit
+                </button>
 
-<form method="POST" onsubmit="return confirm('Are you sure you want to delete the facility: <?= htmlspecialchars($row['name']) ?>?');">
-    <input type="hidden" name="action" value="delete">
-    <input type="hidden" name="facility_id_to_delete" value="<?= $row['facility_id'] ?>">
-    <button type="submit"
-        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
-        🗑 Delete
-    </button>
-</form>
-
-</div>
-</div>
+                <form method="POST" onsubmit="return confirm('Delete this facility?');" class="flex-1">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="facility_id_to_delete" value="<?= $row['facility_id'] ?>">
+                    <button type="submit" class="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-md text-xs font-medium transition-colors">
+                        Delete
+                    </button>
+                </form>
+              </div>
             </div>
           </div>
         <?php endwhile; ?>
@@ -201,65 +219,61 @@ $result = $conn->query($sql);
     </div>
   </div>
 
-  <div id="facilityModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center">
-    <div class="bg-white w-[95%] max-w-lg rounded-2xl shadow-xl p-8 relative animate-fadeIn">
-      <h2 class="text-2xl font-semibold text-gray-800 mb-6">Add a Facility</h2>
-      <form id="facilityForm" action="<?= $_SERVER['PHP_SELF'] ?>" method="POST" enctype="multipart/form-data" class="space-y-5">
-        <input type="hidden" name="facilityId" id="facilityId"> <div class="flex flex-col items-center">
-          <img id="previewImage" src="https://via.placeholder.com/250x150" alt="Preview"
-            class="w-48 h-32 object-cover rounded-lg border mb-3 shadow-sm">
-          <input type="file" name="facilityPicture" id="facilityPicture" accept="image/*" class="text-sm">
+  <!-- Minimalist Modal -->
+  <div id="facilityModal" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-[999] flex items-center justify-center">
+    <div class="bg-white w-[95%] max-w-md rounded-xl shadow-2xl p-6 relative animate-fadeIn">
+      <h2 class="text-xl font-medium text-gray-900 mb-6">Add Facility</h2>
+      <form id="facilityForm" action="<?= $_SERVER['PHP_SELF'] ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <input type="hidden" name="facilityId" id="facilityId">
+        
+        <!-- Image Upload -->
+        <div class="text-center">
+          <div class="w-32 h-20 mx-auto mb-3 rounded-lg border-2 border-dashed border-gray-200 overflow-hidden">
+            <img id="previewImage" src="https://via.placeholder.com/128x80?text=Image" alt="Preview" class="w-full h-full object-cover">
+          </div>
+          <input type="file" name="facilityPicture" id="facilityPicture" accept="image/*" class="text-xs text-gray-500">
         </div>
 
-        <div>
-          <label class="block text-sm mb-1 font-medium text-gray-700">Facility Name</label>
-          <input type="text" name="facilityName" required placeholder="Ex: Conference Room"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <!-- Form Fields -->
+        <div class="space-y-4">
+          <div>
+            <input type="text" name="facilityName" required placeholder="Facility name"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <input type="number" name="facilityCapacity" required placeholder="Capacity"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+            <input type="text" name="facilityLocation" required placeholder="Location"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <input type="date" name="facilityDate" required
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+            <input type="time" name="facilityTime" required
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
+          </div>
         </div>
 
-        <div>
-          <label class="block text-sm mb-1 font-medium text-gray-700">Capacity</label>
-          <input type="number" name="facilityCapacity" required placeholder="Ex: 50"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
+        <!-- Status is automatically set to 'Pending' for new facilities -->
+        <input type="hidden" name="facilityStatus" value="Pending">
 
-        <div>
-          <label class="block text-sm mb-1 font-medium text-gray-700">Location</label>
-          <input type="text" name="facilityLocation" required placeholder="Ex: 2nd Floor, East Wing"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-<div>
-  <label class="block text-sm mb-1 font-medium text-gray-700">Status</label>
-  <select name="facilityStatus" required
-    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-    <option value="Approved">Approved</option>
-    <option value="Rejected">Rejected</option>
-    <option value="Pending">Pending</option>
-    <option value="Under Maintenance">Under Maintenance</option>
-  </select>
-</div>
-
-        <div>
-          <label class="block text-sm mb-1 font-medium text-gray-700">Available Date</label>
-          <input type="date" name="facilityDate" required
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <div>
-          <label class="block text-sm mb-1 font-medium text-gray-700">Available Time</label>
-          <input type="time" name="facilityTime" required
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <div class="flex justify-end gap-4 pt-5">
-          <button type="button" id="closeModal"
-            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm transition">Cancel</button>
-          <button type="submit" name="saveFacility" id="saveFacilityBtn"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm transition">Save</button>
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="closeModal" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">
+            Cancel
+          </button>
+          <button type="submit" name="saveFacility" id="saveFacilityBtn" class="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+            Save
+          </button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- Include Success Modal -->
+  <?php include 'partials/success_modal.php'; ?>
   
   <script>
     
@@ -329,6 +343,12 @@ $result = $conn->query($sql);
         previewImage.src = URL.createObjectURL(pictureInput.files[0]);
       }
     });
+
+    // Show success modal if there's a success message
+    <?php if (isset($_SESSION['facility_success'])): ?>
+      showSuccessModal('Facility Added!', '<?= addslashes($_SESSION['facility_success']) ?>');
+      <?php unset($_SESSION['facility_success']); ?>
+    <?php endif; ?>
 
   </script>
 

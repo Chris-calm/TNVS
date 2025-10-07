@@ -47,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if (in_array($imageFileType, $allowed_types) && move_uploaded_file($file_tmp_name, $target_file)) {
             $picture_path = $target_file; // Update the path
         } else {
-            // Handle upload error (e.g., file too large, wrong type, move failed)
             // For simplicity here, we'll just ignore the upload if it fails,
             // keeping the $picture_path as $existing_picture_path or null.
         }
@@ -57,12 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($action === 'add') {
             $stmt = $conn->prepare("INSERT INTO visitors (name, contact, purpose, visit_date, visit_time, person_to_visit, picture_path) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("sssssss", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $picture_path);
+            $stmt->execute();
+            $_SESSION['visitor_success'] = "Visitor '$name' has been pre-registered successfully.";
         } else {
             // For edit, if a new file wasn't uploaded, $picture_path retains the $existing_picture_path.
             $stmt = $conn->prepare("UPDATE visitors SET name=?, contact=?, purpose=?, visit_date=?, visit_time=?, person_to_visit=?, picture_path=? WHERE id=?");
             $stmt->bind_param("sssssssi", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $picture_path, $id);
+            $stmt->execute();
+            $_SESSION['visitor_success'] = "Visitor '$name' has been updated successfully.";
         }
-        $stmt->execute();
     }
 
     if ($action === 'delete') {
@@ -78,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt = $conn->prepare("DELETE FROM visitors WHERE id=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
+        $_SESSION['visitor_success'] = "Visitor has been deleted successfully.";
     }
 
     header("Location: Visitor_Pre_Registration.php");
@@ -115,21 +118,30 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
     <section id="content">
         <?php include 'partials/header.php'; ?>
 
-        <main>
-            <div class="max-w-6xl mx-auto p-6">
-                <header class="flex items-center justify-between mb-6">
-                    <h1 class="text-2xl font-semibold">Visitor Pre-Registration</h1>
-                    <button id="btnAdd" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-500">Add Visitor</button>
-                </header>
-
-                <div class="mb-4 flex items-center gap-2">
-                    <input id="search" type="search" placeholder="Search visitors..." class="border rounded-md px-3 py-2 w-80" />
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-light text-gray-900">Visitor Pre-Registration</h1>
+                        <p class="text-sm text-gray-500 mt-1">Manage visitor pre-registrations and appointments</p>
+                    </div>
+                    <button id="btnAdd" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Add Visitor
+                    </button>
                 </div>
+                
+                <!-- Search -->
+                <div class="mb-6">
+                    <input id="search" type="search" placeholder="Search visitors..." 
+                           class="w-full max-w-md border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
+                </div>
+            </div>
 
                 <section id="visitorGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <?php if ($visitors->num_rows > 0): ?>
                         <?php while ($v = $visitors->fetch_assoc()): ?>
-                            <article class="visitorCard bg-white rounded-xl p-4 shadow hover:shadow-md transition" 
+                            <article class="visitorCard bg-white rounded-lg border border-gray-100 p-4 hover:border-gray-200 transition-colors" 
                                     data-id="<?= $v['id'] ?>"
                                     data-name="<?= htmlspecialchars($v['name']) ?>"
                                     data-contact="<?= htmlspecialchars($v['contact']) ?>"
@@ -145,7 +157,7 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
                                             // The path logic here is based on the original file's use of a relative path from the script's location
                                             $image_url = !empty($image_path) && file_exists($image_path) ? $image_path : 'https://via.placeholder.com/60?text=No+Pic'; 
                                         ?>
-                                        <div class="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-indigo-200">
+                                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
                                             <?php if ($image_url !== 'https://via.placeholder.com/60?text=No+Pic'): ?>
                                                 <img src="<?= htmlspecialchars($image_url) ?>" alt="Visitor Picture" class="w-full h-full object-cover">
                                             <?php else: ?>
@@ -154,24 +166,29 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
                                         </div>
                                         
                                         <div>
-                                            <h3 class="visitorName text-lg font-semibold"><?= htmlspecialchars($v['name']) ?></h3>
-                                            <p class="visitorPurpose text-sm text-slate-600"><?= htmlspecialchars($v['purpose']) ?></p>
+                                            <h3 class="visitorName font-medium text-gray-900"><?= htmlspecialchars($v['name']) ?></h3>
+                                            <p class="visitorPurpose text-sm text-gray-500"><?= htmlspecialchars($v['purpose']) ?></p>
                                         </div>
                                     </div>
 
-                                    <div class="flex gap-2 flex-shrink-0">
-                                        <button class="btnEdit text-sm px-2 py-1 border rounded">Edit</button>
-                                        <form method="POST" style="display:inline">
+                                    <div class="flex gap-1 flex-shrink-0">
+                                        <button class="btnEdit p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
+                                            <i class='bx bx-edit text-lg'></i>
+                                        </button>
+                                        <form method="POST" style="display:inline" onsubmit="return confirm('Delete this visitor?');">
                                             <input type="hidden" name="id" value="<?= $v['id'] ?>">
                                             <input type="hidden" name="action" value="delete">
-                                            <button type="submit" class="btnDelete text-sm px-2 py-1 border rounded text-red-600">Delete</button>
+                                            <button type="submit" class="btnDelete p-2 text-gray-400 hover:text-red-600 transition-colors" title="Delete">
+                                                <i class='bx bx-trash text-lg'></i>
+                                            </button>
                                         </form>
                                     </div>
                                 </div>
-                                <p class="visitorDetails text-sm mt-2 text-slate-600">
-                                    Visiting **<?= htmlspecialchars($v['person_to_visit']) ?>** on **<?= $v['visit_date'] ?>** at **<?= $v['visit_time'] ?>**<br>
-                                    Contact: <?= htmlspecialchars($v['contact']) ?>
-                                </p>
+                                <div class="mt-3 space-y-1 text-sm text-gray-500">
+                                    <p><span class="font-medium">Visiting:</span> <?= htmlspecialchars($v['person_to_visit']) ?></p>
+                                    <p><span class="font-medium">Date:</span> <?= date('M j, Y', strtotime($v['visit_date'])) ?> at <?= date('g:i A', strtotime($v['visit_time'])) ?></p>
+                                    <p><span class="font-medium">Contact:</span> <?= htmlspecialchars($v['contact']) ?></p>
+                                </div>
                             </article>
                         <?php endwhile; ?>
                     <?php else: ?>
@@ -340,11 +357,20 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
                     if (emptyState) {
                         emptyState.style.display = visibleCards.length === 0 ? 'block' : 'none';
                     }
-                });
             </script>
         </main>
     </section>
 
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['visitor_success'])): ?>
+            showSuccessModal('Success!', '<?= addslashes($_SESSION['visitor_success']) ?>');
+            <?php unset($_SESSION['visitor_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

@@ -39,8 +39,9 @@ if (isset($_GET['return'])) {
         $insertStmt->close();
     }
     
-    // Step 4: Redirect to Document_Access_Permissions.php with success message
-    header("Location: Document_Access_Permissions.php?returned=1");
+    // Step 4: Redirect with success message
+    $_SESSION['view_success'] = "Document has been returned from archive successfully.";
+    header("Location: View_Records.php");
     exit;
 }
 
@@ -80,44 +81,53 @@ $archivedDocs = $conn->query("
     <section id="content">
         <?php include 'partials/header.php'; ?>
         
-        <main>
-      
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Minimalist Header -->
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-light text-gray-900">Archived Documents</h1>
+                        <p class="text-sm text-gray-500 mt-1">View and restore archived documents</p>
+                    </div>
+                    <a href="Document_Access_Permissions.php"
+                        class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Back to Permissions
+                    </a>
+                </div>
+            </div>
 
-            <div class="w-[95%] md:w-[90%] lg:w-[80%] mx-auto py-5">
-
-              <div class="flex justify-between items-center mb-8">
-                <h1 class="text-3xl font-semibold text-gray-800">Archived Documents</h1>
-                <a href="Document_Access_Permissions.php"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl shadow-md text-sm font-medium transition">
-                  ← Back to Permissions
-                </a>
-              </div>
-
-              <div class="overflow-x-auto bg-white rounded-xl shadow-md">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-100">
-                    <tr>
-                      <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Document Title</th>
-                      <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">File Name</th>
-                      <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Archived By</th>
-                      <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Uploaded At</th>
-                      <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200">
+            <!-- Minimalist Table -->
+            <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archived By</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
                     <?php if ($archivedDocs && $archivedDocs->num_rows > 0): ?>
                       <?php while($row = $archivedDocs->fetch_assoc()): ?>
-                        <tr>
-                          <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['title']) ?></td>
-                          <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['filename']) ?></td>
-                          <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['user_role']) ?></td>
-                          <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['uploaded_at']) ?></td>
-                          <td class="px-6 py-4 text-sm text-gray-700 flex gap-2">
-                            <button onclick="openPreview('<?= $row['filepath'] ?>','<?= $row['filename'] ?>')"
-                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">View</button>
-                            <button onclick="openReturnModal(<?= $row['id'] ?>)"
-                                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">Return</button>
-                          </td>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($row['title']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($row['filename']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($row['user_role']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= date('M j, Y', strtotime($row['uploaded_at'])) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div class="flex gap-2">
+                                    <button onclick="openPreview('<?= $row['filepath'] ?>','<?= $row['filename'] ?>')"
+                                            class="text-gray-400 hover:text-blue-600 transition-colors" title="View">
+                                        <i class='bx bx-show text-lg'></i>
+                                    </button>
+                                    <button onclick="openReturnModal(<?= $row['id'] ?>)"
+                                            class="text-gray-400 hover:text-green-600 transition-colors" title="Return">
+                                        <i class='bx bx-undo text-lg'></i>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                       <?php endwhile; ?>
                     <?php else: ?>
@@ -239,6 +249,16 @@ $archivedDocs = $conn->query("
     </script>
 
 
+    <!-- Include Success Modal -->
+    <?php include 'partials/success_modal.php'; ?>
+
     <script src="../JS/script.js"></script>
+    <script>
+        // Show success modal if there's a success message
+        <?php if (isset($_SESSION['view_success'])): ?>
+            showSuccessModal('Success!', '<?= addslashes($_SESSION['view_success']) ?>');
+            <?php unset($_SESSION['view_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
 </html>

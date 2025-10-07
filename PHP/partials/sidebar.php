@@ -3,8 +3,8 @@
 ?>
 <section id="sidebar">
     <a href="" class="brand">
-        <img src="../PICTURES/Black and White Circular Art & Design Logo.png" alt="Trail Ad Corporation Logo" class="brand-logo">
-        <span class="text">TNVS</span>
+        <img src="../PICTURES/TONVS_Logo_Transparent.png" alt="Trail Ad Corporation Logo" class="brand-logo" style="width: 68px; height: 68px;">
+        <span class="text" style="font-size: 14px; font-weight: 600;">Transport Network Vehicle Service</span>
     </a>
 
     <ul class="side-menu top">
