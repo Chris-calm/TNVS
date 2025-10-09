@@ -1,0 +1,146 @@
+{
+    "users": [
+        {
+            "id": "1",
+            "username": "superadmin",
+            "password": "$2y$10$zD0.C64gaSWx4tYKqnwujeLu9c2JQllb7FEYiKZPN4vmR.xyiKpLy",
+            "role": "super_admin",
+            "created_at": "2025-10-06 07:51:23",
+            "email": null,
+            "profile_picture": null
+        },
+        {
+            "id": "2",
+            "username": "admin",
+            "password": "$2y$10$GF5KxjPdFxsIdy7gFmpgvuPICaMZMv8rndDOxkN6ndMdrT53FPpfO",
+            "role": "admin",
+            "created_at": "2025-10-06 07:51:23",
+            "email": "",
+            "profile_picture": "profile_2_1760008084.jpg"
+        },
+        {
+            "id": "3",
+            "username": "employee",
+            "password": "$2y$10$ybgIDkNQSxBi\/NrDGZBhy.t.gngwvcJqUvZz987Q1byl5SoLR1BSO",
+            "role": "employee",
+            "created_at": "2025-10-06 07:51:24",
+            "email": "",
+            "profile_picture": "profile_3_1760007799.jpg"
+        },
+        {
+            "id": "4",
+            "username": "visitor",
+            "password": "$2y$10$VM6GSsgtGPUh3lQjTjlI6uX5G5YpBWFTpxKlVZcB5KLjNRFgFt142",
+            "role": "",
+            "created_at": "2025-10-06 07:51:24",
+            "email": null,
+            "profile_picture": null
+        }
+    ],
+    "facilities": [
+        {
+            "facility_id": "27",
+            "name": "Maple",
+            "capacity": "1",
+            "location": "2ND FLOOR MV",
+            "status": "Approved",
+            "picture": "0c47b381-65f4-40bd-85cf-55a29965f738.jpg",
+            "available_date": "2025-10-17",
+            "available_time": "08:58:00",
+            "created_at": "2025-10-05 12:58:44"
+        },
+        {
+            "facility_id": "28",
+            "name": "Maple",
+            "capacity": "1",
+            "location": "Top & Bottom zingzing",
+            "status": "Pending",
+            "picture": "0c47b381-65f4-40bd-85cf-55a29965f738.jpg",
+            "available_date": "2025-10-14",
+            "available_time": "10:53:00",
+            "created_at": "2025-10-05 14:53:28"
+        },
+        {
+            "facility_id": "29",
+            "name": "TEST FACILITY",
+            "capacity": "1",
+            "location": "Top & Bottom zingzing",
+            "status": "Approved",
+            "picture": "552688220_2265769740587794_6183573623937394502_n.jpg",
+            "available_date": "2025-10-06",
+            "available_time": "23:35:00",
+            "created_at": "2025-10-06 03:35:35"
+        },
+        {
+            "facility_id": "30",
+            "name": "Coco Martin",
+            "capacity": "1",
+            "location": "undefined",
+            "status": "Approved",
+            "picture": "ac7ccdc4-f5a8-4b63-bad9-20b2dffeaad4.jpg",
+            "available_date": "2025-10-31",
+            "available_time": "23:44:00",
+            "created_at": "2025-10-06 03:45:01"
+        },
+        {
+            "facility_id": "31",
+            "name": "asdsad",
+            "capacity": "12",
+            "location": "1233421",
+            "status": "Rejected",
+            "picture": "Minimalist Login Interface Design.png",
+            "available_date": "2025-10-14",
+            "available_time": "23:56:00",
+            "created_at": "2025-10-06 03:56:46"
+        },
+        {
+            "facility_id": "32",
+            "name": "TEST FACILITY",
+            "capacity": "50",
+            "location": "2ND FLOOR MV",
+            "status": "Under Maintenance",
+            "picture": "552688220_2265769740587794_6183573623937394502_n.jpg",
+            "available_date": "2025-10-16",
+            "available_time": "16:34:00",
+            "created_at": "2025-10-06 05:34:05"
+        }
+    ],
+    "case_records": [
+        {
+            "id": "5",
+            "title": "asd",
+            "complainant": "asd",
+            "respondent": "asd",
+            "status": "open",
+            "details": "asddw",
+            "created_at": "2025-10-09 17:49:19"
+        },
+        {
+            "id": "6",
+            "title": "Driver",
+            "complainant": "Passenger",
+            "respondent": "Police",
+            "status": "open",
+            "details": "Me hurt ahooga ahooga",
+            "created_at": "2025-10-09 17:56:29"
+        }
+    ],
+    "policies": [
+        {
+            "id": "3",
+            "title": "Safe Conduct for Admin",
+            "role": "administrative",
+            "short_desc": "A policy for safe driving",
+            "full_policy": "A policy for safe admins",
+            "created_at": "2025-10-05 13:01:26"
+        },
+        {
+            "id": "4",
+            "title": "Bawal ang kupal",
+            "role": "administrative",
+            "short_desc": "si chris kupal",
+            "full_policy": "WALA LANG BOBO KASI SI CHRIS",
+            "created_at": "2025-10-07 10:31:30"
+        }
+    ]
+}

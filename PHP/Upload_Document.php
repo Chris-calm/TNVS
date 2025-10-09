@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -15,6 +11,8 @@ $pendingApprovals = getPendingItems($conn);
 
 // --- 1. HANDLE UPLOAD ---
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["docFile"])) {
+    // Check upload permission
+    RBACMiddleware::requirePermission('upload_documents');
     $title = $_POST["docTitle"];
     
     // Use session username if available, otherwise default to "Admin"
@@ -103,10 +101,12 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
                         <h1 class="text-2xl font-light text-gray-900">Documents</h1>
                         <p class="text-sm text-gray-500 mt-1">Upload and manage your documents</p>
                     </div>
+                    <?php if (RBACMiddleware::hasPermission('upload_documents')): ?>
                     <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
                         class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
                         Upload Document
                     </button>
+                    <?php endif; ?>
                 </div>
             </div>
 

@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -289,7 +285,7 @@ $result = $conn->query($sql);
     const facilityNameInput = document.querySelector("input[name='facilityName']");
     const facilityCapacityInput = document.querySelector("input[name='facilityCapacity']");
     const facilityLocationInput = document.querySelector("input[name='facilityLocation']");
-    const facilityStatusInput = document.querySelector("select[name='facilityStatus']");
+    const facilityStatusInput = document.querySelector("input[name='facilityStatus']");
     const facilityDateInput = document.querySelector("input[name='facilityDate']");
     const facilityTimeInput = document.querySelector("input[name='facilityTime']");
     const previewImage = document.getElementById("previewImage");

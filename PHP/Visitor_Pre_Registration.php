@@ -332,7 +332,6 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
                         });
                     });
                 });
-
                 // Simple client-side search/filter
                 const searchInput = document.getElementById('search');
                 const visitorCards = document.querySelectorAll('.visitorCard');
@@ -357,6 +356,7 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
                     if (emptyState) {
                         emptyState.style.display = visibleCards.length === 0 ? 'block' : 'none';
                     }
+                });
             </script>
         </main>
     </section>

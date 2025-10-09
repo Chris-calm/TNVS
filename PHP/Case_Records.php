@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -17,6 +13,12 @@ $pendingApprovals = getPendingItems($conn);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'add' || $action === 'edit') {
+        // Check permissions for add/edit
+        if ($action === 'add') {
+            RBACMiddleware::requirePermission('add_cases');
+        } else {
+            RBACMiddleware::requirePermission('edit_cases');
+        }
         $id = $_POST['id'] ?? null;
         $title = $_POST['title'];
         $complainant = $_POST['complainant'];
@@ -28,23 +30,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("INSERT INTO case_records (title, complainant, respondent, status, details) VALUES (?, ?, ?, ?, ?)");
             $stmt->bind_param("sssss", $title, $complainant, $respondent, $status, $details);
             $stmt->execute();
-            $_SESSION['case_success'] = "Case record '$title' has been added successfully.";
+            $_SESSION['case_success'] = "Case record '{$title}' has been added successfully.";
         } else {
             $stmt = $conn->prepare("UPDATE case_records SET title=?, complainant=?, respondent=?, status=?, details=? WHERE id=?");
             $stmt->bind_param("sssssi", $title, $complainant, $respondent, $status, $details, $id);
             $stmt->execute();
-            $_SESSION['case_success'] = "Case record '$title' has been updated successfully.";
+            $_SESSION['case_success'] = "Case record '{$title}' has been updated successfully.";
         }
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
 
     if ($action === 'delete') {
+        // Check delete permission
+        RBACMiddleware::requirePermission('delete_cases');
         $id = $_POST['id'];
+        
+        // Fetch the title of the record to be deleted for the success message
+        $stmt_fetch = $conn->prepare("SELECT title FROM case_records WHERE id=?");
+        $stmt_fetch->bind_param("i", $id);
+        $stmt_fetch->execute();
+        $result_fetch = $stmt_fetch->get_result();
+        $record_to_delete = $result_fetch->fetch_assoc();
+        $title_deleted = $record_to_delete['title'] ?? 'Record';
+
+        // Perform the deletion
         $stmt = $conn->prepare("DELETE FROM case_records WHERE id=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
-        $_SESSION['case_success'] = "Case record has been deleted successfully.";
+        
+        $_SESSION['case_success'] = "Case record '{$title_deleted}' has been deleted successfully.";
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
@@ -84,19 +99,19 @@ $records_json = json_encode($records);
         <?php include 'partials/header.php'; ?>
 
         <main class="max-w-7xl mx-auto px-4 py-8">
-            <!-- Minimalist Header -->
             <div class="mb-12">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h1 class="text-2xl font-light text-gray-900">Case Records</h1>
                         <p class="text-sm text-gray-500 mt-1">Manage legal case records and documentation</p>
                     </div>
+                    <?php if (RBACMiddleware::hasPermission('add_cases')): ?>
                     <button id="btnAdd" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
                         Add Case
                     </button>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Filters -->
                 <div class="flex flex-wrap gap-3 mb-6">
                     <button data-status="all" class="statusBtn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">All</button>
                     <button data-status="Open" class="statusBtn px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Open</button>
@@ -108,12 +123,11 @@ $records_json = json_encode($records);
                 </div>
             </div>
 
-                <div id="casesGrid" class="space-y-4">
-                    </div>
-                
-                <div id="emptyState" class="hidden text-center py-10 text-slate-500">No matching case records found.</div>
+            <div id="casesGrid" class="space-y-4">
             </div>
-        
+                
+            <div id="emptyState" class="hidden text-center py-10 text-slate-500">No matching case records found.</div>
+            
             <template id="cardTemplate">
                 <article class="bg-white rounded-lg border border-gray-100 p-4 hover:border-gray-200 transition-colors">
                     <div class="flex items-start justify-between">
@@ -139,7 +153,6 @@ $records_json = json_encode($records);
             </template>
 
 
-            <!-- Minimalist Modal -->
             <div id="modal" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden items-center justify-center p-4 z-[999]">
                 <div class="bg-white rounded-xl w-full max-w-lg shadow-2xl p-6 animate-fadeIn">
                     <div class="flex items-center justify-between mb-6">
@@ -155,14 +168,14 @@ $records_json = json_encode($records);
                         
                         <div>
                             <input id="titleInput" name="title" required placeholder="Case title" 
-                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
+                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
                         </div>
                         
                         <div class="grid grid-cols-2 gap-3">
                             <input id="complainantInput" name="complainant" required placeholder="Complainant" 
-                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
+                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
                             <input id="respondentInput" name="respondent" required placeholder="Respondent" 
-                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
+                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors" />
                         </div>
                         
                         <select id="statusInput" name="status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors">
@@ -172,7 +185,7 @@ $records_json = json_encode($records);
                         </select>
                         
                         <textarea id="detailsInput" name="details" rows="4" placeholder="Case details..." 
-                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
+                                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"></textarea>
                         
                         <div class="flex gap-3 pt-4">
                             <button type="button" id="cancelBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">
@@ -186,11 +199,34 @@ $records_json = json_encode($records);
                 </div>
             </div>
 
+            <div id="deleteModal" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden items-center justify-center p-4 z-[1000]">
+                <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl p-6 text-center animate-fadeIn">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class='bx bx-error text-red-600 text-3xl'></i>
+                    </div>
+                    <h2 class="text-xl font-medium text-gray-900 mb-2">Confirm Deletion</h2>
+                    <p id="deleteMessage" class="text-sm text-gray-500 mb-6">Are you sure you want to delete this case record? This action cannot be undone.</p>
+                    
+                    <form id="deleteForm" method="POST" class="flex gap-3">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" id="deleteId">
+                        
+                        <button type="button" id="deleteCancelBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                            Delete Case
+                        </button>
+                    </form>
+                </div>
+            </div>
+
 
             <script>
                 const cases = <?= $records_json ?>; // Load PHP data into JS variable
 
                 const modal = document.getElementById('modal');
+                const deleteModal = document.getElementById('deleteModal'); // New Delete Modal
                 const btnAdd = document.getElementById('btnAdd');
                 const modalClose = document.getElementById('modalClose');
                 const cancelBtn = document.getElementById('cancelBtn');
@@ -208,6 +244,11 @@ $records_json = json_encode($records);
                 const statusInput = document.getElementById('statusInput');
                 const detailsInput = document.getElementById('detailsInput');
                 const actionInput = document.getElementById('actionInput');
+                
+                // Delete Modal elements
+                const deleteIdInput = document.getElementById('deleteId');
+                const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+                const deleteForm = document.getElementById('deleteForm');
 
                 var editingId = null;
                 var activeStatusFilter = 'all';
@@ -255,14 +296,8 @@ $records_json = json_encode($records);
                         });
 
                         node.querySelector('.btnDelete').addEventListener('click', function() {
-                            if (confirm('Delete this case record? This action cannot be undone.')) {
-                                // Create a form and submit it
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.innerHTML = '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' + c.id + '">';
-                                document.body.appendChild(form);
-                                form.submit();
-                            }
+                            // *** MODIFIED: Open custom delete modal instead of browser confirm ***
+                            openDeleteModal(c.id, c.title);
                         });
 
                         casesGrid.appendChild(node);
@@ -291,32 +326,52 @@ $records_json = json_encode($records);
                     editingId = null;
                     caseForm.reset();
                 }
+                
+                function openDeleteModal(id, title) {
+                    deleteIdInput.value = id;
+                    document.getElementById('deleteMessage').textContent = "Are you sure you want to permanently delete the case record titled '" + title + "'? This action cannot be undone.";
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.classList.add('flex');
+                }
+                
+                function closeDeleteModal() {
+                    deleteModal.classList.add('hidden');
+                    deleteModal.classList.remove('flex');
+                    deleteIdInput.value = '';
+                }
+
                 btnAdd.addEventListener('click', function(){ openModal('Add Case'); });
                 modalClose.addEventListener('click', closeModal);
                 cancelBtn.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
-
-                // Form now submits normally to PHP, no AJAX needed
-                // The PHP will handle the redirect and success message
+                
+                deleteCancelBtn.addEventListener('click', closeDeleteModal); // Close delete modal
 
                 searchInput.addEventListener('input', function(){ render(); });
 
                 var statusBtns = document.querySelectorAll('.statusBtn');
                 statusBtns.forEach(function(btn){
                     btn.addEventListener('click', function(){
-                        statusBtns.forEach(function(b){ b.classList.remove('bg-indigo-50','border-indigo-300'); });
-                        btn.classList.add('bg-indigo-50','border-indigo-300');
+                        // Removed the undefined 'bg-indigo-50','border-indigo-300' classes to prevent errors/unexpected styling
+                        statusBtns.forEach(function(b){ b.classList.remove('bg-gray-900', 'text-white'); b.classList.add('bg-gray-100', 'text-gray-700'); }); 
+                        
+                        // Set the active button style (updated to use a sensible high-contrast style)
+                        btn.classList.add('bg-gray-900', 'text-white');
+                        btn.classList.remove('bg-gray-100', 'text-gray-700'); 
+
                         activeStatusFilter = btn.getAttribute('data-status');
                         render();
                     });
                 });
 
-                document.querySelector('.statusBtn[data-status="all"]').classList.add('bg-indigo-50','border-indigo-300');
+                // Apply initial active style to 'All' button (Updated to new high-contrast style)
+                document.querySelector('.statusBtn[data-status="all"]').classList.add('bg-gray-900','text-white');
+                document.querySelector('.statusBtn[data-status="all"]').classList.remove('bg-gray-100', 'text-gray-700');
+                
                 render();
             </script>
         </main>
     </section>
 
-    <!-- Include Success Modal -->
     <?php include 'partials/success_modal.php'; ?>
 
     <script src="../JS/script.js"></script>

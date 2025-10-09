@@ -1,16 +1,11 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 // Include database connection and common functions
 include 'db_connect.php';
 include 'partials/functions.php';
-
 // --- Data Fetching ---
 $totalDocuments = getTotalCount($conn, 'documents');
 $totalVisitors = getTotalCount($conn, 'visitors');
@@ -55,13 +50,11 @@ $pendingApprovals = getPendingItems($conn);
     <section id="content">
         <?php include 'partials/header.php'; ?>
         <main class="max-w-7xl mx-auto px-4 py-8">
-            <!-- Minimalist Header -->
             <div class="mb-12">
                 <h1 class="text-2xl font-light text-gray-900">Dashboard</h1>
                 <p class="text-sm text-gray-500 mt-1">Overview of your TNVS system</p>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 <div class="bg-white rounded-lg border border-gray-100 p-6 hover:border-gray-200 transition-colors">
                     <div class="flex items-center justify-between">
@@ -112,9 +105,7 @@ $pendingApprovals = getPendingItems($conn);
                 </div>
             </div>
 
-            <!-- Content Grid -->
             <div class="grid lg:grid-cols-2 gap-8">
-                <!-- Recent Case Records -->
                 <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-100">
                         <h3 class="text-lg font-medium text-gray-900">Recent Case Records</h3>
@@ -148,8 +139,29 @@ $pendingApprovals = getPendingItems($conn);
                                                 <?= htmlspecialchars($record['respondent']) ?>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
-                                                    <?= htmlspecialchars($record['status']) ?>
+                                                <?php
+                                                     // Get the database status value
+                                                    $status_db = $record['status'];
+                                                    // Convert to lowercase for reliable comparison
+                                                    $status_lower = strtolower($status_db); 
+
+                                                    // Default text and class
+                                                    $status_text = 'Unknown';
+                                                    $status_class = 'bg-gray-100 text-gray-800'; 
+
+                                                    if ($status_lower === 'open') {
+                                                        $status_text = 'Open';
+                                                        $status_class = 'bg-yellow-100 text-yellow-800';
+                                                    } elseif ($status_lower === 'in progress') {
+                                                        $status_text = 'In Progress';
+                                                        $status_class = 'bg-blue-100 text-blue-800';
+                                                    } elseif ($status_lower === 'closed') {
+                                                        $status_text = 'Closed'; // Changed from 'Close' for better clarity/consistency
+                                                        $status_class = 'bg-green-100 text-green-800';
+                                                    }
+                                                ?>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= htmlspecialchars($status_class) ?>">
+                                                    <?= htmlspecialchars($status_text) ?>
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -167,7 +179,6 @@ $pendingApprovals = getPendingItems($conn);
                     </div>
                 </div>
 
-                <!-- Pending Approvals -->
                 <div class="bg-white rounded-lg border border-gray-100">
                     <div class="px-6 py-4 border-b border-gray-100">
                         <h3 class="text-lg font-medium text-gray-900">Pending Approvals</h3>
@@ -205,7 +216,6 @@ $pendingApprovals = getPendingItems($conn);
         </main>
     </section>
     
-    <!-- Include Success Modal -->
     <?php include 'partials/success_modal.php'; ?>
     
     <script src="../JS/script.js"></script>

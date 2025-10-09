@@ -6,6 +6,29 @@
 if (!isset($pendingApprovals)) {
     $pendingApprovals = [];
 }
+
+// Get current user's profile picture
+$currentUserProfilePic = '../PICTURES/Ser.jpg'; // Default fallback
+try {
+    if (isset($conn) && isset($_SESSION['user_id'])) {
+        // Check if profile_picture column exists
+        $columns = $conn->query("SHOW COLUMNS FROM users LIKE 'profile_picture'");
+        if ($columns && $columns->num_rows > 0) {
+            $stmt = $conn->prepare("SELECT profile_picture FROM users WHERE id = ?");
+            $stmt->bind_param("i", $_SESSION['user_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!empty($user['profile_picture']) && file_exists("../uploads/profiles/" . $user['profile_picture'])) {
+                $currentUserProfilePic = "../uploads/profiles/" . $user['profile_picture'];
+            }
+        }
+    }
+} catch (Exception $e) {
+    // Keep default if there's any error
+}
 ?>
 <!-- Overlay for closing popups -->
 <div class="popup-overlay" id="popupOverlay"></div>
@@ -21,7 +44,7 @@ if (!isset($pendingApprovals)) {
         <span class="num"><?= count($pendingApprovals) ?></span>
     </a>
     <a href="#" class="profile" id="profileBtn">
-        <img src="../PICTURES/Ser.jpg">
+        <img src="<?= htmlspecialchars($currentUserProfilePic) ?>" alt="Profile">
     </a>
 
     <!-- Notification Dropdown -->
@@ -54,7 +77,7 @@ if (!isset($pendingApprovals)) {
     <!-- Profile Dropdown -->
     <div class="profile-dropdown" id="profileDropdown">
         <div class="profile-header">
-            <img src="../PICTURES/Ser.jpg" alt="Profile">
+            <img src="<?= htmlspecialchars($currentUserProfilePic) ?>" alt="Profile">
             <div class="name"><?= htmlspecialchars($_SESSION['username']) ?></div>
             <div class="role"><?= str_replace('_', ' ', htmlspecialchars($_SESSION['role'])) ?></div>
         </div>
