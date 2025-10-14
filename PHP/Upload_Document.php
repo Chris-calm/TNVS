@@ -50,7 +50,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["docFile"])) {
 }
 
 // --- 2. FETCH RECORDS ---
-$result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
+// First, let's check if the table exists and what columns it has
+$tableCheck = $conn->query("DESCRIBE documents");
+$columns = [];
+if ($tableCheck) {
+    while ($row = $tableCheck->fetch_assoc()) {
+        $columns[] = $row['Field'];
+    }
+}
+
+// Try different queries based on available columns
+if (in_array('is_archived', $columns)) {
+    $query = "SELECT * FROM documents WHERE is_archived = 0 ORDER BY uploaded_at DESC";
+} else {
+    $query = "SELECT * FROM documents ORDER BY uploaded_at DESC";
+}
+
+$result = $conn->query($query);
+
+// Debug: Check for query errors and show more info
+if (!$result) {
+    error_log("Database query error: " . $conn->error);
+    $result = null;
+    $debug_info = "Query failed: " . $conn->error;
+} else {
+    $debug_info = "Query successful. Rows found: " . $result->num_rows . ". Columns available: " . implode(', ', $columns);
+}
 ?>
 
 <!DOCTYPE html>
@@ -94,6 +119,7 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
         <?php include 'partials/header.php'; ?>
         
         <main class="max-w-7xl mx-auto px-4 py-8">
+
             <!-- Minimalist Header -->
             <div class="mb-12">
                 <div class="flex items-center justify-between mb-6">
@@ -122,31 +148,34 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                            <?php if ($result->num_rows > 0) { ?>
-                                <?php while($row = $result->fetch_assoc()) { ?>
-                                    <tr class="hover:bg-gray-50 cursor-pointer transition-colors" onclick="openPreview('<?= htmlspecialchars($row['filepath']) ?>', '<?= htmlspecialchars($row['filename']) ?>')">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
-                                            <?= htmlspecialchars($row['title']) ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($row['uploaded_by']) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <?php if (!empty($row['uploaded_at'])): ?>
-                                                <?= date('M j, Y', strtotime($row['uploaded_at'])) ?>
-                                            <?php else: ?>
-                                                N/A
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            <i class='bx bx-show text-lg hover:text-blue-600 transition-colors'></i>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                            <?php } else { ?>
-                                <tr><td colspan="4" class="text-center py-6 text-gray-500">No documents uploaded yet.</td></tr>
-                            <?php } ?>
-                        </tbody>
-                    </table>
-                </div>
+                        <?php 
+                        // Re-run the query for table display (the previous result may have been consumed)
+                        $tableResult = $conn->query($query);
+                        
+                        if ($tableResult && $tableResult->num_rows > 0): ?>
+                            <?php while($row = $tableResult->fetch_assoc()): ?>
+                                <tr class="hover:bg-gray-50 cursor-pointer transition-colors" onclick="openPreview('<?= htmlspecialchars($row['filepath']) ?>', '<?= htmlspecialchars($row['filename']) ?>')">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                        <?= htmlspecialchars($row['title']) ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($row['uploaded_by']) ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <?php if (!empty($row['uploaded_at'])): ?>
+                                            <?= date('M j, Y', strtotime($row['uploaded_at'])) ?>
+                                        <?php else: ?>
+                                            N/A
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                        <i class='bx bx-show text-lg hover:text-blue-600 transition-colors'></i>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr><td colspan="4" class="text-center py-6 text-gray-500">No documents uploaded yet.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
 
             <!-- Minimalist Upload Modal -->

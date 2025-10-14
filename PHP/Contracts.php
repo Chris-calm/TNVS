@@ -93,7 +93,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // Fetch contracts
-$result = $conn->query("SELECT * FROM contracts ORDER BY id DESC");
+$query = "SELECT * FROM contracts ORDER BY id DESC";
+$result = $conn->query($query);
+
+// Debug: Check for query errors
+if (!$result) {
+    error_log("Database query error: " . $conn->error);
+    $result = null;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -130,7 +137,12 @@ $result = $conn->query("SELECT * FROM contracts ORDER BY id DESC");
                 </div>
 
                 <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8" id="contractsGrid">
-                    <?php while ($row = $result->fetch_assoc()): ?>
+                    <?php 
+                    // Re-run the query for display (in case the previous result was consumed)
+                    $displayResult = $conn->query($query);
+                    
+                    if ($displayResult && $displayResult->num_rows > 0): 
+                        while ($row = $displayResult->fetch_assoc()): ?>
                     <div class="bg-white rounded-xl shadow-md overflow-hidden">
                         <img src="<?= htmlspecialchars($row['picture'] ?: 'https://via.placeholder.com/300x200') ?>" class="w-full h-48 object-cover">
                         <div class="p-5">
@@ -152,7 +164,13 @@ $result = $conn->query("SELECT * FROM contracts ORDER BY id DESC");
                             </div>
                         </div>
                     </div>
-                    <?php endwhile; ?>
+                    <?php 
+                        endwhile; 
+                    else: ?>
+                        <div class="col-span-full text-center py-8">
+                            <p class="text-gray-500">No contracts found.</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
