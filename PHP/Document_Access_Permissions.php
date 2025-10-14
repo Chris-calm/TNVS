@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -218,7 +214,7 @@ $permissions = $conn->query("
         }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
     
@@ -243,7 +239,7 @@ $permissions = $conn->query("
             <!-- Minimalist Table -->
             <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-100">
+                  <thead style="background-color: #eeeeee;" class="bg-custom">
                     <tr>
                       <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Document Title</th>
                       <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">User/Role</th>
@@ -262,20 +258,30 @@ $permissions = $conn->query("
                           <td class="px-6 py-4 text-sm text-gray-700 flex flex-wrap gap-2">
                             <?php if(in_array('View', $permissionList)): ?>
                               <button onclick="openPreview('<?= $row['filepath'] ?>','<?= $row['filename'] ?>')"
-                                      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">View</button>
+                                      class="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors" title="View">
+                                <i class='bx bx-show text-lg'></i>
+                              </button>
                             <?php endif; ?>
                             <?php if(in_array('Download', $permissionList)): ?>
                               <a href="<?= $row['filepath'] ?>" download
-                                 class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">Download</a>
+                                 class="text-green-600 hover:text-green-800 p-2 rounded-full hover:bg-green-50 transition-colors" title="Download">
+                                <i class='bx bx-download text-lg'></i>
+                              </a>
                             <?php endif; ?>
                             <button onclick="openEditModal(<?= $row['doc_id'] ?>, '<?= htmlspecialchars(addslashes($row['user_role'])) ?>', '<?= htmlspecialchars(addslashes($row['title'])) ?>', '<?= $row['granted_permissions'] ?>')"
-                                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs">Edit</button>
+                                    class="text-yellow-600 hover:text-yellow-800 p-2 rounded-full hover:bg-yellow-50 transition-colors" title="Edit">
+                              <i class='bx bx-edit text-lg'></i>
+                            </button>
                             <?php if(in_array('Archive', $permissionList)): ?>
                                 <button onclick="openArchiveModal(<?= $row['doc_id'] ?>)"
-                                        class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-xs">Archive</button>
+                                        class="text-purple-600 hover:text-purple-800 p-2 rounded-full hover:bg-purple-50 transition-colors" title="Archive">
+                                  <i class='bx bx-archive text-lg'></i>
+                                </button>
                             <?php endif; ?>
                             <button onclick="openDeleteModal(<?= $row['doc_id'] ?>)"
-                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">Delete Doc</button>
+                                    class="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition-colors" title="Delete Document">
+                              <i class='bx bx-trash text-lg'></i>
+                            </button>
                           </td>
                         </tr>
                       <?php endwhile; ?>

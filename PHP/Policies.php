@@ -90,7 +90,7 @@ $policies_json = json_encode($policies);
     }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
 
@@ -306,11 +306,11 @@ $policies_json = json_encode($policies);
         roleBtns.forEach(function(btn){
             btn.addEventListener('click', function(){
                 // Reset styles
-                roleBtns.forEach(function(b){ b.classList.remove('bg-gray-900', 'text-white'); b.classList.add('bg-gray-100', 'text-gray-700'); });
+                roleBtns.forEach(function(b){ b.classList.remove('bg-gray-900', 'text-white'); b.classList.add('bg-custom', 'text-gray-700'); });
                 
                 // Set active style
                 btn.classList.add('bg-gray-900', 'text-white');
-                btn.classList.remove('bg-gray-100', 'text-gray-700');
+                btn.classList.remove('bg-custom', 'text-gray-700');
 
                 activeRoleFilter = btn.getAttribute('data-role');
                 render();
@@ -319,7 +319,7 @@ $policies_json = json_encode($policies);
         
         // Initial setup
         document.querySelector('.roleBtn[data-role="all"]').classList.add('bg-gray-900', 'text-white');
-        document.querySelector('.roleBtn[data-role="all"]').classList.remove('bg-gray-100', 'text-gray-700');
+        document.querySelector('.roleBtn[data-role="all"]').classList.remove('bg-custom', 'text-gray-700');
         render();
 
     </script>

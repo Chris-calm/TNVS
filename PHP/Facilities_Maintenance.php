@@ -1,10 +1,7 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -48,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['facility_id']) && iss
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
     

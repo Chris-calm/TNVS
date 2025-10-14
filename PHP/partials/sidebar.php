@@ -2,6 +2,32 @@
 // Sidebar partial - Include this in your pages with: include 'partials/sidebar.php';
 require_once __DIR__ . '/../rbac_middleware.php';
 RBACMiddleware::init();
+
+// Get current user's profile information
+$currentUserProfilePic = '../PICTURES/Ser.jpg'; // Default fallback
+$currentUserName = $_SESSION['username'] ?? 'User';
+$currentUserRole = $_SESSION['role'] ?? 'employee';
+
+try {
+    if (isset($conn) && isset($_SESSION['user_id'])) {
+        // Check if profile_picture column exists
+        $columns = $conn->query("SHOW COLUMNS FROM users LIKE 'profile_picture'");
+        if ($columns && $columns->num_rows > 0) {
+            $stmt = $conn->prepare("SELECT profile_picture FROM users WHERE id = ?");
+            $stmt->bind_param("i", $_SESSION['user_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!empty($user['profile_picture']) && file_exists("../uploads/profiles/" . $user['profile_picture'])) {
+                $currentUserProfilePic = "../uploads/profiles/" . $user['profile_picture'];
+            }
+        }
+    }
+} catch (Exception $e) {
+    // Keep default if there's any error
+}
 ?>
 <section id="sidebar">
     <a href="" class="brand">
@@ -9,9 +35,25 @@ RBACMiddleware::init();
         <span class="text" style="font-size: 14px; font-weight: 600;">Transport Network Vehicle System</span>
     </a>
 
+    <!-- Profile Status Section -->
+    <div class="profile-status">
+        <div class="profile-info">
+            <div class="profile-avatar">
+                <div class="profile-circle">
+                    <img src="<?= htmlspecialchars($currentUserProfilePic) ?>" alt="Profile Picture">
+                    <div class="status-indicator"></div>
+                </div>
+            </div>
+            <div class="profile-details">
+                <div class="profile-name"><?= htmlspecialchars($currentUserName) ?></div>
+                <div class="profile-role"><?= str_replace('_', ' ', ucwords($currentUserRole, '_')) ?></div>
+            </div>
+        </div>
+    </div>
+
     <ul class="side-menu top">
         <?php if (RBACMiddleware::hasPermission('view_dashboard')): ?>
-        <li class="active">
+        <li <?= (basename($_SERVER['PHP_SELF']) == 'Dashboard.php') ? 'class="active"' : '' ?>>
             <a href="../PHP/Dashboard.php">
                 <i class='bx bxs-dashboard'></i>
                 <span class="text">Dashboard</span>
@@ -152,7 +194,7 @@ RBACMiddleware::init();
     </ul>
     <ul class="side-menu">
         <li>
-            <a href="../PHP/logout.php" class="logout">
+            <a href="logout.php" class="logout">
                 <i class='bx bxs-log-out-circle' ></i>
                 <span class="text">Logout</span>
             </a>

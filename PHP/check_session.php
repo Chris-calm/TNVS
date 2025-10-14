@@ -11,7 +11,7 @@ if (!isset($_SESSION)) {
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SESSION['role'])) {
-    header("Location: index.php");
+    header("Location: ../index.php");
     exit();
 }
 

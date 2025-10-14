@@ -86,7 +86,7 @@ try {
                 <i class='bx bx-cog'></i>
                 <span>Settings</span>
             </a>
-            <a href="../PHP/logout.php" class="logout">
+            <a href="logout.php" class="logout">
                 <i class='bx bx-log-out'></i>
                 <span>Logout</span>
             </a>

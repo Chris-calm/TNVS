@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -24,11 +20,11 @@ if (isset($_GET['export_csv']) && $_GET['export_csv'] == 1) {
         $output = fopen('php://output', 'w');
         
         // Output CSV Headers (Adjusted to include all relevant fields)
-        fputcsv($output, ['ID', 'Name', 'Contact', 'Purpose', 'Visit Date', 'Time In', 'Time Out', 'Person to Visit', 'Status', 'Pass ID', 'Picture Path']);
+        fputcsv($output, ['ID', 'Name', 'Contact', 'Purpose', 'Visit Date', 'Visit Time', 'Person to Visit', 'Time In', 'Time Out', 'Status', 'Picture Path']);
         
-        // Fetch ALL data for export
+        // Fetch ALL visitor data for export
         $sql = "SELECT 
-                    id, name, contact, purpose, visit_date, 
+                    id, name, contact, purpose, visit_date, visit_time,
                     TIME(checkin) as time_in, TIME(checkout) as time_out, 
                     person_to_visit, status, pass_id, picture_path 
                 FROM visitors 
@@ -53,14 +49,13 @@ if (isset($_GET['export_csv']) && $_GET['export_csv'] == 1) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['checkin'])) {
         $id = $_POST['id'];
-        $pass_id = $_POST['pass_id'];
-        $stmt = $conn->prepare("UPDATE visitors SET status='Checked In', checkin=NOW(), pass_id=? WHERE id=?");
-        $stmt->bind_param("si", $pass_id, $id);
+        $stmt = $conn->prepare("UPDATE visitors SET status='Visiting', checkin=NOW() WHERE id=?");
+        $stmt->bind_param("i", $id);
         $stmt->execute();
-        $_SESSION['logs_success'] = "Visitor has been checked in successfully with Pass ID: $pass_id";
+        $_SESSION['logs_success'] = "Visitor has been checked in successfully.";
     } elseif (isset($_POST['checkout'])) {
         $id = $_POST['id'];
-        $stmt = $conn->prepare("UPDATE visitors SET status='Checked Out', checkout=NOW() WHERE id=?");
+        $stmt = $conn->prepare("UPDATE visitors SET status='Visit Complete', checkout=NOW() WHERE id=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $_SESSION['logs_success'] = "Visitor has been checked out successfully.";
@@ -73,7 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['editLog'])) {
         $id = $_POST['id'];
         $name = $_POST['name'];
+        $contact = $_POST['contact'];
         $purpose = $_POST['purpose'];
+        $visit_date = $_POST['visit_date'];
+        $visit_time = $_POST['visit_time'];
+        $person_to_visit = $_POST['person_to_visit'];
         $checkin = $_POST['checkin'];
         $checkout = $_POST['checkout'];
         $current_picture_path = $_POST['current_picture_path'];
@@ -96,8 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $stmt = $conn->prepare("UPDATE visitors SET name=?, purpose=?, checkin=?, checkout=?, picture_path=? WHERE id=?");
-        $stmt->bind_param("sssssi", $name, $purpose, $checkin, $checkout, $picture_path, $id);
+        $stmt = $conn->prepare("UPDATE visitors SET name=?, contact=?, purpose=?, visit_date=?, visit_time=?, person_to_visit=?, checkin=?, checkout=?, picture_path=? WHERE id=?");
+        $stmt->bind_param("sssssssssi", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $checkin, $checkout, $picture_path, $id);
         $stmt->execute();
         $_SESSION['logs_success'] = "Visitor log for '$name' has been updated successfully.";
     }
@@ -105,13 +104,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-// --- Fetch all visitor logs ---
-$sql = "SELECT id, name, contact, purpose, DATE(visit_date) as visit_date, TIME(checkin) as time_in, TIME(checkout) as time_out, 
+// --- Fetch all visitor records (remove restrictive filter for now) ---
+$sql = "SELECT id, name, contact, purpose, DATE(visit_date) as visit_date, visit_time, TIME(checkin) as time_in, TIME(checkout) as time_out, 
                person_to_visit, status, pass_id, picture_path, checkin, checkout 
         FROM visitors 
         ORDER BY id DESC";
 
 $result = $conn->query($sql);
+
+// Debug: Check what we found
+if ($result) {
+    $total_count = $result->num_rows;
+    echo "<!-- Debug: Found $total_count total visitors in database -->";
+    // Reset the result pointer to the beginning for the display loop
+    $result->data_seek(0);
+} else {
+    echo "<!-- Debug: Query failed: " . $conn->error . " -->";
+}
+
+// Additional debug: Check if table exists and show structure
+$table_check = $conn->query("SHOW TABLES LIKE 'visitors'");
+$table_exists = $table_check && $table_check->num_rows > 0;
+echo "<!-- Debug: Visitors table exists: " . ($table_exists ? "YES" : "NO") . " -->";
+
+if ($table_exists) {
+    $structure_result = $conn->query("DESCRIBE visitors");
+    if ($structure_result) {
+        echo "<!-- Debug: Table structure: ";
+        while ($field = $structure_result->fetch_assoc()) {
+            echo $field['Field'] . " (" . $field['Type'] . "), ";
+        }
+        echo " -->";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -135,9 +160,17 @@ $result = $conn->query($sql);
     .cursor-pointer {
         transition: background-color 0.15s ease-in-out;
     }
+    
+    /* Page-specific white background override */
+    body {
+        background-color: #eeeeee !important;
+    }
+    .bg-custom {
+        background-color: white !important;
+    }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="flex h-screen overflow-hidden" style="background-color: white;">
     
     <?php include 'partials/sidebar.php'; ?>
 
@@ -145,102 +178,144 @@ $result = $conn->query($sql);
         <?php include 'partials/header.php'; ?>
 
         <main>
-            <div class="max-w-7xl mx-auto p-6">
-                <header class="flex items-center justify-between mb-6">
-                    <h1 class="text-2xl font-semibold">Visitor Logs</h1>
-                    <div class="flex space-x-2">
-                        <a href="?export_csv=1" class="bg-green-600 text-white px-4 py-2 rounded-md shadow hover:bg-green-700">Export to CSV</a>
-                        <a href="Visitor_Pre_Registration.php" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-700">Pre-Registration</a>
+            <div class="w-full px-6 py-6">
+                <header class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-semibold">Visitor Logs</h1>
+                            <p class="text-sm text-gray-600 mt-1">Manage pre-registered visitors and their check-in/check-out status</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="?export_csv=1" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">Export to CSV</a>
+                            <a href="Visitor_Pre_Registration.php" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">Add Pre-Registration</a>
+                        </div>
                     </div>
                 </header>
 
-                <div class="overflow-x-auto bg-white rounded-xl shadow-md">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-100">
+
+                <div class="overflow-x-auto bg-white rounded-xl shadow-md w-full">
+                    <table class="w-full divide-y divide-gray-200">
+                        <thead style="background-color: white;" class="bg-custom">
                             <tr>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Purpose</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Pass ID</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Time In</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Time Out</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Status (Click to Action)</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Other Actions</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Name</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Contact</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Purpose</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Visit Date</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Visit Time</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Person to Visit</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Time In</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Time Out</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Status</th>
+                                <th class="px-8 py-4 text-left text-sm font-medium text-gray-700">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200" id="logsTableBody">
-                            <?php if ($result && $result->num_rows > 0): ?>
-                                <?php while ($row = $result->fetch_assoc()): ?>
+                            <?php 
+                            // Create a fresh query for display to avoid pointer issues
+                            $display_sql = "SELECT id, name, contact, purpose, DATE(visit_date) as visit_date, visit_time, TIME(checkin) as time_in, TIME(checkout) as time_out, 
+                                           person_to_visit, status, pass_id, picture_path, checkin, checkout 
+                                    FROM visitors 
+                                    ORDER BY id DESC";
+                            $display_result = $conn->query($display_sql);
+                            
+                            if ($display_result && $display_result->num_rows > 0): 
+                                echo "<!-- Debug: Fresh query found " . $display_result->num_rows . " rows for display -->";
+                                $row_count = 0;
+                                while ($row = $display_result->fetch_assoc()): 
+                                    $row_count++;
+                                    echo "<!-- Debug: Processing row $row_count: " . htmlspecialchars($row['name'] ?? 'NO_NAME') . " (ID: " . ($row['id'] ?? 'NO_ID') . ") -->";
+                                ?>
                                     <tr class="logRow">
-                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['name']) ?></td>
-                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['purpose']) ?></td>
-                                        <td class="px-6 py-4 text-sm font-mono text-gray-800"><?= htmlspecialchars($row['pass_id'] ?? '-') ?></td>
-                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['time_in'] ?? '-') ?></td>
-                                        <td class="px-6 py-4 text-sm text-gray-700"><?= htmlspecialchars($row['time_out'] ?? '-') ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['name']) ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['contact'] ?? '-') ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['purpose']) ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['visit_date'] ?? '-') ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['visit_time'] ?? '-') ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['person_to_visit'] ?? '-') ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['time_in'] ?? '-') ?></td>
+                                        <td class="px-8 py-5 text-sm text-gray-700"><?= htmlspecialchars($row['time_out'] ?? '-') ?></td>
                                         
-                                        <td class="px-6 py-4">
+                                        <td class="px-8 py-5">
                                             <?php
-                                                $status = htmlspecialchars($row['status']);
-                                                // Use json_encode for safe JavaScript string literals, especially for names with quotes
-                                                $js_name = json_encode($row['name']); 
-                                                $id = $row['id'];
+                                                $has_checkin = !empty($row['checkin']);
+                                                $has_checkout = !empty($row['checkout']);
                                                 
-                                                $status_class = '';
-                                                $action_html = '';
-                                                
-                                                if ($status == 'Checked In') {
-                                                    $status_class = 'text-green-700 bg-green-100 cursor-pointer hover:bg-green-200';
-                                                    // Hidden form for Check Out submission
-                                                    $action_html = "
-                                                        <form id='form_checkout_{$id}' method='POST' onsubmit='return confirm(\"Check out " . htmlspecialchars($row['name']) . "?\")' style='display:none;'>
-                                                            <input type='hidden' name='id' value='{$id}'>
-                                                            <input type='hidden' name='checkout' value='1'>
-                                                        </form>
-                                                        <span onclick='document.getElementById(\"form_checkout_{$id}\").submit()' class='inline-block px-3 py-1 text-xs font-medium rounded-full {$status_class}' title='Click to Check Out'>
-                                                            {$status}
-                                                        </span>
-                                                    ";
-                                                } elseif ($status == 'Pre-Registered') {
-                                                    $status_class = 'text-yellow-700 bg-yellow-100 cursor-pointer hover:bg-yellow-200';
-                                                    // JS function prompts for Pass ID and submits Check In
-                                                    $action_html = "
-                                                        <span onclick='promptForCheckin({$id}, {$js_name})' class='inline-block px-3 py-1 text-xs font-medium rounded-full {$status_class}' title='Click to Check In'>
-                                                            {$status}
-                                                        </span>
-                                                    ";
-                                                } else { // Checked Out (not clickable)
-                                                    $status_class = 'text-blue-700 bg-blue-100';
-                                                    $action_html = "
-                                                        <span class='inline-block px-3 py-1 text-xs font-medium rounded-full {$status_class}'>
-                                                            {$status}
-                                                        </span>
-                                                    ";
+                                                if (!$has_checkin) {
+                                                    // Not visited yet
+                                                    echo '<span class="inline-block px-3 py-1 text-xs font-medium rounded-full text-yellow-700 bg-yellow-100">Scheduled</span>';
+                                                } elseif ($has_checkin && !$has_checkout) {
+                                                    // Currently visiting
+                                                    echo '<span class="inline-block px-3 py-1 text-xs font-medium rounded-full text-green-700 bg-green-100">Visiting</span>';
+                                                } else {
+                                                    // Visit completed
+                                                    echo '<span class="inline-block px-3 py-1 text-xs font-medium rounded-full text-red-700 bg-red-100">Visit Complete</span>';
                                                 }
-                                                echo $action_html;
                                             ?>
                                         </td>
                                         
-                                        <td class="px-6 py-4 text-sm flex gap-2">
-                                            <button 
-                                                onclick="openEditModal(
-                                                    '<?= $row['id'] ?>',
-                                                    '<?= htmlspecialchars(addslashes($row['name'])) ?>',
-                                                    '<?= htmlspecialchars(addslashes($row['purpose'])) ?>',
-                                                    '<?= $row['checkin'] ?>',
-                                                    '<?= $row['checkout'] ?>',
-                                                    '<?= htmlspecialchars($row['picture_path'] ?? '') ?>'
-                                                )"
-                                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs">Edit</button>
+                                        <td class="px-8 py-5 text-sm">
+                                            <div class="flex flex-wrap gap-1">
+                                                <?php
+                                                $current_status = $row['status'] ?? 'Pre-Registered';
+                                                $has_checkin = !empty($row['checkin']);
+                                                $has_checkout = !empty($row['checkout']);
+                                                ?>
+                                                
+                                                <!-- Time In Button -->
+                                                <?php if (!$has_checkin): ?>
+                                                    <form method="POST" style="display:inline" onsubmit="return confirm('Check in <?= htmlspecialchars($row['name']) ?>?')">
+                                                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                        <input type="hidden" name="checkin" value="1">
+                                                        <button type="submit" class="text-black hover:text-gray-600 px-3 py-2.5 rounded text-sm" title="Time In">
+                                                            <i class='bx bx-check-circle text-lg ml-2'></i>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                                
+                                                <!-- Time Out Button -->
+                                                <?php if ($has_checkin && !$has_checkout): ?>
+                                                    <form method="POST" style="display:inline" onsubmit="return confirm('Check out <?= htmlspecialchars($row['name']) ?>?')">
+                                                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                        <input type="hidden" name="checkout" value="1">
+                                                        <button type="submit" class="text-black hover:text-gray-600 px-3 py-2.5 rounded text-sm" title="Time Out">
+                                                            <i class='bx bx-exit text-lg ml-2'></i>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                                
+                                                <!-- Edit Button -->
+                                                <button 
+                                                    onclick="openEditModal(
+                                                        '<?= $row['id'] ?>',
+                                                        '<?= htmlspecialchars(addslashes($row['name'])) ?>',
+                                                        '<?= htmlspecialchars(addslashes($row['contact'] ?? '')) ?>',
+                                                        '<?= htmlspecialchars(addslashes($row['purpose'])) ?>',
+                                                        '<?= $row['visit_date'] ?? '' ?>',
+                                                        '<?= $row['visit_time'] ?? '' ?>',
+                                                        '<?= htmlspecialchars(addslashes($row['person_to_visit'] ?? '')) ?>',
+                                                        '<?= $row['checkin'] ?>',
+                                                        '<?= $row['checkout'] ?>',
+                                                        '<?= htmlspecialchars($row['picture_path'] ?? '') ?>'
+                                                    )"
+                                                    class="text-black hover:text-gray-600 px-3 py-2.5 rounded text-sm" title="Edit">
+                                                    <i class='bx bx-pencil text-lg ml-2'></i>
+                                                </button>
 
-                                            <form method="POST" onsubmit="return confirm('Delete log for <?= htmlspecialchars($row['name']) ?>?')">
-                                                <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                                <input type="hidden" name="delete" value="1">
-                                                <button type="submit" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-xs">Delete</button>
-                                            </form>
+                                                <!-- Delete Button -->
+                                                <form method="POST" style="display:inline" onsubmit="return confirm('Delete log for <?= htmlspecialchars($row['name']) ?>?')">
+                                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                    <input type="hidden" name="delete" value="1">
+                                                    <button type="submit" class="text-black hover:text-gray-600 px-3 py-2.5 rounded text-sm" title="Delete">
+                                                        <i class='bx bx-trash text-lg ml-2'></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>
                             <?php else: ?>
-                                <tr><td colspan="7" class="text-center py-6 text-gray-500">No visitor logs found.</td></tr>
+                                <?php echo "<!-- Debug: No rows found in display query -->";  ?>
+                                <tr><td colspan="10" class="text-center py-6 text-gray-500">No pre-registered visitors found.</td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -264,8 +339,29 @@ $result = $conn->query($sql);
                         </div>
 
                         <div>
+                            <label class="block text-sm font-medium mb-1">Contact Number</label>
+                            <input name="contact" id="editContact" class="w-full border rounded-md px-3 py-2" />
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-medium mb-1">Purpose</label>
                             <input name="purpose" id="editPurpose" required class="w-full border rounded-md px-3 py-2" />
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Visit Date</label>
+                                <input name="visit_date" id="editVisitDate" type="date" class="w-full border rounded-md px-3 py-2" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Visit Time</label>
+                                <input name="visit_time" id="editVisitTime" type="time" class="w-full border rounded-md px-3 py-2" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Person to Visit</label>
+                            <input name="person_to_visit" id="editPersonToVisit" class="w-full border rounded-md px-3 py-2" />
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
@@ -291,7 +387,7 @@ $result = $conn->query($sql);
 
                         <div class="flex justify-end gap-2 pt-3">
                             <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-md border">Cancel</button>
-                            <button type="submit" class="px-4 py-2 rounded-md bg-indigo-600 text-white">Save Changes</button>
+                            <button type="submit" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -301,7 +397,11 @@ $result = $conn->query($sql);
                 const modal = document.getElementById('editModal');
                 const editId = document.getElementById('editId');
                 const editName = document.getElementById('editName');
+                const editContact = document.getElementById('editContact');
                 const editPurpose = document.getElementById('editPurpose');
+                const editVisitDate = document.getElementById('editVisitDate');
+                const editVisitTime = document.getElementById('editVisitTime');
+                const editPersonToVisit = document.getElementById('editPersonToVisit');
                 const editCheckin = document.getElementById('editCheckin');
                 const editCheckout = document.getElementById('editCheckout');
                 const picturePathHidden = document.getElementById('picturePathHidden');
@@ -309,13 +409,17 @@ $result = $conn->query($sql);
                 const modalPicturePreview = document.getElementById('modalPicturePreview');
 
 
-                function openEditModal(id, name, purpose, checkin, checkout, picture_path) {
+                function openEditModal(id, name, contact, purpose, visit_date, visit_time, person_to_visit, checkin, checkout, picture_path) {
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
                     
                     editId.value = id;
                     editName.value = name;
+                    editContact.value = contact;
                     editPurpose.value = purpose;
+                    editVisitDate.value = visit_date;
+                    editVisitTime.value = visit_time;
+                    editPersonToVisit.value = person_to_visit;
                     
                     // Format datetime strings for datetime-local input
                     editCheckin.value = checkin ? checkin.replace(" ", "T") : "";
@@ -391,4 +495,6 @@ $result = $conn->query($sql);
         <?php endif; ?>
     </script>
 </body>
+
 </html>
+

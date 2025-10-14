@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -119,7 +115,7 @@ $result = $conn->query("SELECT * FROM contracts ORDER BY id DESC");
     }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
 
@@ -130,7 +126,7 @@ $result = $conn->query("SELECT * FROM contracts ORDER BY id DESC");
             <div class="w-[95%] md:w-[90%] lg:w-[80%] mx-auto py-5">
                 <div class="flex justify-between items-center mb-8">
                     <h1 class="text-3xl font-semibold text-gray-800">Contracts</h1>
-                    <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-xl shadow-md text-sm font-medium transition">+ Add Contract</button>
+                    <button onclick="openAddModal()" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">+ Add Contract</button>
                 </div>
 
                 <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8" id="contractsGrid">
@@ -168,9 +164,18 @@ $result = $conn->query("SELECT * FROM contracts ORDER BY id DESC");
                         <input type="hidden" name="action" id="formAction" value="add">
                         <input type="hidden" name="id" id="contractId">
                         <input type="hidden" name="old_picture" id="oldImage">
-                        <input type="hidden" id="editingIndex"> <div class="flex flex-col items-center">
+                        <input type="hidden" id="editingIndex"> 
+                        
+                        <div class="flex flex-col items-center">
                             <img id="imagePreview" src="" alt="Preview" class="hidden w-40 h-40 object-cover rounded-lg border mb-2">
-                            <input type="file" name="image" id="imageInput" accept="image/*" onchange="previewImage(event)" class="w-fit border rounded-lg px-3 py-2 text-sm">
+                            
+                            <!-- Custom File Upload Button -->
+                            <div class="relative w-full">
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg px-6 py-4 text-center cursor-pointer hover:border-gray-400 transition-colors w-full">
+                                    <span class="text-gray-500 text-sm">+ Choose File</span>
+                                </div>
+                                <input type="file" name="image" id="imageInput" accept="image/*" onchange="previewImage(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            </div>
                         </div>
 
                         <div>

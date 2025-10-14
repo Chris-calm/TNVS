@@ -88,7 +88,7 @@ if (file_exists($log_file)) {
 
 echo "<h3>🚀 Quick Actions</h3>";
 echo "<p>";
-echo "<a href='index.php' style='background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;'>🔑 Test Login</a>";
+echo "<a href='../index.php' style='background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;'>🔑 Test Login</a>";
 echo "<a href='test_otp_system.php' style='background: #17a2b8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;'>🧪 Test System</a>";
 echo "<a href='Dashboard.php' style='background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>📊 Dashboard</a>";
 echo "</p>";

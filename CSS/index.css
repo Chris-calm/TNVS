@@ -16,10 +16,10 @@ li {
     --poppins: 'Poppins', sans-serif;
     --lato: 'Lato', sans-serif;
 
-    --light: #F9F9F9;
+    --light: #e8e8e8;
     --blue: #3C91E6;
     --light-blue: #CFE8FF;
-    --grey: #eee;
+    --grey: #eeeeee;
     --dark-grey: #AAAAAA;
     --dark: #342E37;
     --red: #DB504A;
@@ -44,7 +44,7 @@ body {
     left: 0;
     width: 280px;
     height: 100%;
-    background: var(--light);
+    background: #e8e8e8;
     z-index: 1000;
     font-family: var(--lato);
     transition: .3s ease;
@@ -60,6 +60,26 @@ body {
     display: flex;
     align-items: center;
     color: var(--blue);
+    transition: all 0.4s ease;
+    cursor: pointer;
+    padding: 0 12px;
+    border-radius: 12px;
+    margin: 8px;
+}
+
+#sidebar .brand:hover {
+    background: rgba(60, 145, 230, 0.1);
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(60, 145, 230, 0.2);
+}
+
+#sidebar .brand:hover .brand-logo {
+    transform: scale(1.1) rotate(5deg);
+}
+
+#sidebar .brand:hover .text {
+    color: var(--blue);
+    font-weight: 800;
 }
 #sidebar .brand .bx {
     min-width: 60px;
@@ -68,7 +88,7 @@ body {
 }
 #sidebar .side-menu {
     width: 100%;
-    margin-top: 48px;
+    margin-top: 20px;
 }
 #sidebar .side-menu li {
     height: 48px;
@@ -109,7 +129,7 @@ body {
 #sidebar .side-menu li a {
     width: 100%;
     height: 100%;
-    background: var(--light);
+    background: #e8e8e8;
     display: flex;
     align-items: center;
     border-radius: 48px;
@@ -117,6 +137,8 @@ body {
     color: var(--dark);
     white-space: nowrap;
     overflow-x: hidden;
+    transition: all 0.4s ease;
+    position: relative;
 }
 #sidebar.hide .side-menu li.active a {
     color: var(--blue);
@@ -127,14 +149,73 @@ body {
 }
 #sidebar .side-menu li a.logout {
     color: var(--red);
+    transition: all 0.4s ease;
+}
+
+#sidebar .side-menu li a.logout:hover {
+    color: #fff;
+    background: rgba(219, 80, 74, 0.9);
+    transform: translateX(8px) scale(1.02);
+    box-shadow: 0 4px 15px rgba(219, 80, 74, 0.3);
+    font-weight: 500;
+}
+
+#sidebar .side-menu li a.logout:hover .bx {
+    transform: scale(1.1) rotate(-5deg);
+    color: #fff;
+}
+
+#sidebar .side-menu li a.logout::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: var(--red);
+    border-radius: 0 4px 4px 0;
+    transition: height 0.4s ease;
+}
+
+#sidebar .side-menu li a.logout:hover::before {
+    height: 70%;
+    background: #fff;
 }
 #sidebar .side-menu.top li a:hover {
     color: var(--blue);
+    background: rgba(60, 145, 230, 0.1);
+    transform: translateX(8px) scale(1.02);
+    box-shadow: 0 4px 15px rgba(60, 145, 230, 0.2);
+    font-weight: 500;
+}
+
+#sidebar .side-menu.top li a:hover .bx {
+    transform: scale(1.1) rotate(5deg);
+    color: var(--blue);
+}
+
+#sidebar .side-menu.top li a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: var(--blue);
+    border-radius: 0 4px 4px 0;
+    transition: height 0.4s ease;
+}
+
+#sidebar .side-menu.top li a:hover::before {
+    height: 70%;
 }
 #sidebar .side-menu li a .bx {
     min-width: calc(60px - ((4px + 6px) * 2));
     display: flex;
     justify-content: center;
+    transition: all 0.4s ease;
 }
 
 
@@ -155,6 +236,7 @@ body {
     width: 40px;
     object-fit: contain;
     margin: 0 10px;
+    transition: all 0.4s ease;
 }
 
 
@@ -172,7 +254,7 @@ body {
 }
 #content nav {
     height: 56px;
-    background: var(--light);
+    background: #e8e8e8;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -192,7 +274,7 @@ body {
     bottom: -40px;
     left: 0;
     border-radius: 50%;
-    box-shadow: -20px -20px 0 var(--light);
+    box-shadow: -20px -20px 0 #e8e8e8;
 }
 #content nav a {
     color: var(--dark);
@@ -537,11 +619,11 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    background: var(--light);
+    background: #e8e8e8;
     border-radius: 0 0 12px 12px;
-    margin-left: 50px;
+    margin-left: 0;
     padding: 0;
-    transition: max-height 0.3s ease, padding 0.3s ease;
+    transition: max-height 0.4s ease, padding 0.4s ease;
     position: relative;   
 }
 #sidebar .side-menu li.dropdown.open .dropdown-menu {
@@ -549,24 +631,100 @@ body {
     max-height: 500px; 
 }
 #sidebar .side-menu li.dropdown .dropdown-menu li {
-    height: 40px;
+    height: auto;
+    min-height: 40px;
     display: flex;
     align-items: center;
-    padding-left: 10px;
+    padding: 0;
+    margin: 0;
 }
 #sidebar .side-menu li.dropdown .dropdown-menu li a {
     font-size: 14px;
     color: var(--dark-grey);
-    transition: color 0.3s;
+    transition: all 0.4s ease;
+    padding: 8px 20px 8px 60px;
+    border-radius: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    position: relative;
+}
+
+#sidebar .side-menu li.dropdown .dropdown-menu li a::before {
+    content: '';
+    position: absolute;
+    left: 48px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 0;
+    background: var(--blue);
+    border-radius: 2px;
+    transition: height 0.4s ease;
 }
 #sidebar .side-menu li.dropdown .dropdown-menu li a:hover {
     color: var(--blue);
+    background: rgba(60, 145, 230, 0.1);
+    transform: translateX(8px);
+    font-weight: 500;
+    padding-left: 68px;
 }
+
+#sidebar .side-menu li.dropdown .dropdown-menu li a:hover::before {
+    height: 50%;
+}
+#sidebar .side-menu li.dropdown .dropdown-toggle {
+    transition: all 0.4s ease;
+    position: relative;
+}
+
+#sidebar .side-menu li.dropdown .dropdown-toggle:hover {
+    color: var(--blue);
+    background: rgba(60, 145, 230, 0.1);
+    transform: translateX(8px) scale(1.02);
+    box-shadow: 0 4px 15px rgba(60, 145, 230, 0.2);
+    font-weight: 500;
+}
+
+#sidebar .side-menu li.dropdown .dropdown-toggle:hover .bx {
+    transform: scale(1.1);
+    color: var(--blue);
+}
+
+#sidebar .side-menu li.dropdown .dropdown-toggle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: var(--blue);
+    border-radius: 0 4px 4px 0;
+    transition: height 0.4s ease;
+}
+
+#sidebar .side-menu li.dropdown .dropdown-toggle:hover::before {
+    height: 70%;
+}
+
 #sidebar .side-menu li.dropdown .arrow {
     margin-left: auto;
+    transition: all 0.4s ease;
 }
+
 #sidebar .side-menu li.dropdown.open .arrow {
     transform: rotate(180deg);
+}
+
+#sidebar .side-menu li.dropdown .dropdown-toggle:hover .arrow {
+    transform: scale(1.2) rotate(10deg);
+}
+
+#sidebar .side-menu li.dropdown.open .dropdown-toggle:hover .arrow {
+    transform: scale(1.2) rotate(190deg);
 }
 
 

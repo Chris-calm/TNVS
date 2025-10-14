@@ -180,6 +180,7 @@ class RBACConfig {
         'Policies.php' => ['view_policies', 'add_policies', 'edit_policies'],
         
         'Settings.php' => ['system_admin'],
+        'System_Data_Overview.php' => ['system_admin'],
         'Approval_Rejection_Requests.php' => ['view_approvals', 'approve_requests']
     ];
     

@@ -86,7 +86,7 @@ $result = $conn->query("SELECT * FROM documents ORDER BY uploaded_at DESC");
         }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
     

@@ -128,7 +128,7 @@ class RBACMiddleware {
      * Redirect to login page
      */
     private static function redirectToLogin() {
-        header("Location: index.php");
+        header("Location: ../index.php");
         exit();
     }
     
@@ -163,7 +163,7 @@ class RBACMiddleware {
             <script src="https://cdn.tailwindcss.com"></script>
             <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
         </head>
-        <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+        <body style="background-color: #eeeeee;" class="bg-custom min-h-screen flex items-center justify-center">
             <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
                 <div class="mb-6">
                     <i class='bx bx-shield-x text-6xl text-red-500'></i>

@@ -235,7 +235,7 @@ $jsonCases = json_encode($caseCounts);
     }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="flex h-screen overflow-hidden" style="background-color: #eeeeee;">
     
     <?php include 'partials/sidebar.php'; ?>
 

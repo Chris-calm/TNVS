@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 09, 2025 at 02:10 PM
+-- Generation Time: Oct 14, 2025 at 03:50 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -98,7 +98,8 @@ CREATE TABLE `documents` (
 INSERT INTO `documents` (`id`, `title`, `filename`, `filepath`, `uploaded_by`, `uploaded_at`, `is_archived`) VALUES
 (21, 'PMact', '1759640390_PMactivity.docx', 'uploads/1759640390_PMactivity.docx', 'Admin', '2025-10-05 04:59:50', 0),
 (22, 'RCA', '1759700362_Root-Cause-Analysis.docx', 'uploads/1759700362_Root-Cause-Analysis.docx', 'Admin', '2025-10-05 21:39:22', 0),
-(23, 's', '1760003607_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', '../uploads/1760003607_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', 'admin', '2025-10-09 09:53:27', 0);
+(23, 's', '1760003607_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', '../uploads/1760003607_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', 'admin', '2025-10-09 09:53:27', 0),
+(24, 'sad', '1760169973_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', '../uploads/1760169973_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', 'superadmin', '2025-10-11 08:06:13', 0);
 
 -- --------------------------------------------------------
 
@@ -134,7 +135,8 @@ INSERT INTO `document_actions` (`id`, `document_id`, `user_role`, `action_type`,
 (22, 21, 'Admin', 'Edit', 'Permissions updated for document ID: 21', '2025-10-07 02:12:08', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
 (23, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:12:20', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
 (24, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:13:10', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
-(25, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:21:54', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0');
+(25, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:21:54', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(26, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-11 08:05:50', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0');
 
 -- --------------------------------------------------------
 
@@ -155,7 +157,7 @@ CREATE TABLE `document_permissions` (
 --
 
 INSERT INTO `document_permissions` (`id`, `document_id`, `user_role`, `permission_type`, `created_at`) VALUES
-(388, 22, 'Admin', 'View', '2025-10-07 02:22:00');
+(392, 22, 'Admin', 'View', '2025-10-11 08:56:33');
 
 -- --------------------------------------------------------
 
@@ -180,12 +182,9 @@ CREATE TABLE `facilities` (
 --
 
 INSERT INTO `facilities` (`facility_id`, `name`, `capacity`, `location`, `status`, `picture`, `available_date`, `available_time`, `created_at`) VALUES
-(27, 'Maple', 1, '2ND FLOOR MV', 'Approved', '0c47b381-65f4-40bd-85cf-55a29965f738.jpg', '2025-10-17', '08:58:00', '2025-10-05 04:58:44'),
-(28, 'Maple', 1, 'Top & Bottom zingzing', 'Pending', '0c47b381-65f4-40bd-85cf-55a29965f738.jpg', '2025-10-14', '10:53:00', '2025-10-05 06:53:28'),
-(29, 'TEST FACILITY', 1, 'Top & Bottom zingzing', 'Approved', '552688220_2265769740587794_6183573623937394502_n.jpg', '2025-10-06', '23:35:00', '2025-10-05 19:35:35'),
-(30, 'Coco Martin', 1, 'undefined', 'Approved', 'ac7ccdc4-f5a8-4b63-bad9-20b2dffeaad4.jpg', '2025-10-31', '23:44:00', '2025-10-05 19:45:01'),
-(31, 'asdsad', 12, '1233421', 'Rejected', 'Minimalist Login Interface Design.png', '2025-10-14', '23:56:00', '2025-10-05 19:56:46'),
-(32, 'TEST FACILITY', 50, '2ND FLOOR MV', 'Under Maintenance', '552688220_2265769740587794_6183573623937394502_n.jpg', '2025-10-16', '16:34:00', '2025-10-05 21:34:05');
+(35, 'TEST FACILITY', 2, '2ND FLOOR MV', 'Pending', 'ac7ccdc4-f5a8-4b63-bad9-20b2dffeaad4.jpg', '2025-10-24', '20:48:00', '2025-10-14 00:48:51'),
+(36, '21', 1, '2ND FLOOR MV', 'Pending', 'image_2025-10-14_085038530.png', '2025-10-24', '20:51:00', '2025-10-14 00:50:50'),
+(37, '1', 1, '2ND FLOOR MV', 'Pending', 'image_2025-10-14_085418434.png', '2025-10-30', '20:54:00', '2025-10-14 00:54:26');
 
 -- --------------------------------------------------------
 
@@ -279,7 +278,11 @@ INSERT INTO `user_otps` (`id`, `user_id`, `username`, `otp_code`, `email`, `crea
 (4, 1, 'superadmin', '251790', 'zephyra013@gmail.com', '2025-10-09 11:43:47', '2025-10-09 13:48:47', 0),
 (5, 1, 'superadmin', '459804', 'zephyra013@gmail.com', '2025-10-09 11:49:21', '2025-10-09 13:54:21', 1),
 (6, 2, 'admin', '617948', 'casimirochris19@gmail.com', '2025-10-09 11:50:22', '2025-10-09 13:55:22', 1),
-(7, 1, 'superadmin', '170023', 'zephyra013@gmail.com', '2025-10-09 12:02:37', '2025-10-09 14:07:37', 1);
+(7, 1, 'superadmin', '170023', 'zephyra013@gmail.com', '2025-10-09 12:02:37', '2025-10-09 14:07:37', 1),
+(8, 1, 'superadmin', '253563', 'zephyra013@gmail.com', '2025-10-11 08:44:18', '2025-10-11 10:49:18', 1),
+(9, 2, 'admin', '299007', 'casimirochris19@gmail.com', '2025-10-11 08:56:04', '2025-10-11 11:01:04', 1),
+(10, 1, 'superadmin', '151207', 'zephyra013@gmail.com', '2025-10-11 08:56:48', '2025-10-11 11:01:48', 1),
+(11, 1, 'superadmin', '474533', 'zephyra013@gmail.com', '2025-10-14 00:23:14', '2025-10-14 02:28:14', 1);
 
 -- --------------------------------------------------------
 
@@ -414,25 +417,25 @@ ALTER TABLE `contracts`
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `document_actions`
 --
 ALTER TABLE `document_actions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `document_permissions`
 --
 ALTER TABLE `document_permissions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=389;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=393;
 
 --
 -- AUTO_INCREMENT for table `facilities`
 --
 ALTER TABLE `facilities`
-  MODIFY `facility_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `facility_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `policies`
@@ -456,7 +459,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_otps`
 --
 ALTER TABLE `user_otps`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `visitors`

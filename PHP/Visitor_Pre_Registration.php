@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -31,6 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $visit_date = $_POST['visit_date'];
     $visit_time = $_POST['visit_time'];
     $person_to_visit = $_POST['person_to_visit'];
+    $checkin_time = $_POST['checkin_time'] ?? null;
+    $checkout_time = $_POST['checkout_time'] ?? null;
+    $status = $_POST['status'] ?? 'Pre-Registered';
     $existing_picture_path = $_POST['existing_picture_path'] ?? null; // For edit to keep existing path
 
     $picture_path = $existing_picture_path; // Default to existing path or null
@@ -54,14 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     if ($action === 'add' || $action === 'edit') {
         if ($action === 'add') {
-            $stmt = $conn->prepare("INSERT INTO visitors (name, contact, purpose, visit_date, visit_time, person_to_visit, picture_path) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssss", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $picture_path);
+            $stmt = $conn->prepare("INSERT INTO visitors (name, contact, purpose, visit_date, visit_time, person_to_visit, picture_path, status, checkin, checkout) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssssssssss", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $picture_path, $status, $checkin_time, $checkout_time);
             $stmt->execute();
             $_SESSION['visitor_success'] = "Visitor '$name' has been pre-registered successfully.";
         } else {
             // For edit, if a new file wasn't uploaded, $picture_path retains the $existing_picture_path.
-            $stmt = $conn->prepare("UPDATE visitors SET name=?, contact=?, purpose=?, visit_date=?, visit_time=?, person_to_visit=?, picture_path=? WHERE id=?");
-            $stmt->bind_param("sssssssi", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $picture_path, $id);
+            $stmt = $conn->prepare("UPDATE visitors SET name=?, contact=?, purpose=?, visit_date=?, visit_time=?, person_to_visit=?, picture_path=?, status=?, checkin=?, checkout=? WHERE id=?");
+            $stmt->bind_param("ssssssssssi", $name, $contact, $purpose, $visit_date, $visit_time, $person_to_visit, $picture_path, $status, $checkin_time, $checkout_time, $id);
             $stmt->execute();
             $_SESSION['visitor_success'] = "Visitor '$name' has been updated successfully.";
         }
@@ -111,7 +110,7 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
     }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
 
@@ -157,7 +156,7 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
                                             // The path logic here is based on the original file's use of a relative path from the script's location
                                             $image_url = !empty($image_path) && file_exists($image_path) ? $image_path : 'https://via.placeholder.com/60?text=No+Pic'; 
                                         ?>
-                                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-custom">
                                             <?php if ($image_url !== 'https://via.placeholder.com/60?text=No+Pic'): ?>
                                                 <img src="<?= htmlspecialchars($image_url) ?>" alt="Visitor Picture" class="w-full h-full object-cover">
                                             <?php else: ?>
@@ -227,7 +226,13 @@ $visitors = $conn->query("SELECT * FROM visitors ORDER BY id DESC");
 
                             <div>
                                 <label class="block text-sm font-medium mb-1">Visitor Picture (Optional)</label>
-                                <input name="picture" id="visitorPicture" type="file" accept="image/*" class="w-full border rounded-md px-3 py-2" />
+                                <!-- Custom File Upload Button -->
+                                <div class="relative w-full">
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg px-6 py-4 text-center cursor-pointer hover:border-gray-400 transition-colors w-full">
+                                        <span class="text-gray-500 text-sm">+ Choose File</span>
+                                    </div>
+                                    <input name="picture" id="visitorPicture" type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                </div>
                                 <div id="currentPicture" class="mt-2 text-sm"></div>
                             </div>
 

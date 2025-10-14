@@ -109,7 +109,7 @@
 
     .profile-dropdown .profile-header {
         padding: 20px;
-        background: linear-gradient(135deg, #4A90E2 0%, #0066CC 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #fff;
         text-align: center;
     }
@@ -120,6 +120,122 @@
         border-radius: 50%;
         border: 3px solid #fff;
         margin-bottom: 10px;
+    }
+
+    /* ===== SIDEBAR PROFILE STATUS SECTION ===== */
+    .profile-status {
+        padding: 20px 15px 15px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 5px;
+        text-align: center;
+    }
+
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+    }
+
+    .profile-avatar {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .profile-circle {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        padding: 4px;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .profile-circle img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #ffffff;
+    }
+
+    .status-indicator {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        width: 16px;
+        height: 16px;
+        background: #2ecc71;
+        border: 3px solid #2c3e50;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { 
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+            transform: scale(1);
+        }
+        70% { 
+            box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+            transform: scale(1.05);
+        }
+        100% { 
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+            transform: scale(1);
+        }
+    }
+
+    .profile-details {
+        text-align: center;
+        width: 100%;
+    }
+
+    .profile-name {
+        color:rgb(51, 51, 51);
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 25px;
+        margin-bottom: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .profile-role {
+        color:rgb(56, 56, 56);
+        font-size: 12px;
+        text-transform: capitalize;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        margin-bottom: 0px;
+        display: inline-block;
+    }
+
+    /* Responsive adjustments for smaller sidebar */
+    #sidebar.hide .profile-status {
+        display: none;
+    }
+
+    /* Show profile when sidebar is open */
+    #sidebar:not(.hide) .profile-status {
+        display: block;
+    }
+
+    /* Keep menu items at same level when sidebar is collapsed */
+    #sidebar.hide .side-menu.top {
+        margin-top: 120px; /* Compensate for hidden profile section */
+    }
+
+    /* Normal positioning when sidebar is open */
+    #sidebar:not(.hide) .side-menu.top {
+        margin-top: 0;
     }
 
     .profile-dropdown .profile-header .name {
@@ -181,5 +297,19 @@
 
     .popup-overlay.active {
         display: block;
+    }
+
+    /* Custom background color for all modules */
+    body {
+        background-color: #eeeeee !important;
+    }
+    
+    .bg-custom {
+        background-color: #eeeeee !important;
+    }
+    
+    /* Override Tailwind bg-gray-100 */
+    .bg-gray-100 {
+        background-color: #eeeeee !important;
     }
 </style>

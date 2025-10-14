@@ -310,7 +310,7 @@ try {
     }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
     
@@ -370,7 +370,7 @@ try {
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                                <input type="text" value="<?= str_replace('_', ' ', ucwords($userData['role'], '_')) ?>" class="w-full border rounded-lg px-3 py-2 bg-gray-100" readonly>
+                                <input type="text" value="<?= str_replace('_', ' ', ucwords($userData['role'], '_')) ?>" class="w-full border rounded-lg px-3 py-2 bg-custom" readonly>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>

@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -13,7 +9,7 @@ include 'partials/functions.php';
 // Fetch pending approvals for notifications
 $pendingApprovals = getPendingItems($conn);
 
-// --- NEW: Handle Return from Archive ---
+// --- Handle Return from Archive ---
 if (isset($_GET['return'])) {
     $docId = intval($_GET['return']);
 
@@ -41,6 +37,50 @@ if (isset($_GET['return'])) {
     
     // Step 4: Redirect with success message
     $_SESSION['view_success'] = "Document has been returned from archive successfully.";
+    header("Location: View_Records.php");
+    exit;
+}
+
+// --- Handle Document Deletion ---
+if (isset($_GET['delete'])) {
+    $docId = intval($_GET['delete']);
+
+    // Fetch file info before deletion
+    $res = $conn->query("SELECT filename, filepath FROM documents WHERE id = $docId LIMIT 1");
+    if ($res && $row = $res->fetch_assoc()) {
+        $filename = $row['filename'];
+        $filepath = $row['filepath'];
+
+        // Try possible server paths and unlink if exists
+        $candidates = [];
+
+        if (!empty($filepath)) {
+            // relative stored like 'uploads/...' -> server path __DIR__/../uploads/...
+            $candidates[] = __DIR__ . '/../' . $filepath;
+            $candidates[] = __DIR__ . '/' . $filepath;
+        }
+
+        if (!empty($filename)) {
+            $candidates[] = __DIR__ . '/../uploads/' . $filename;
+            $candidates[] = __DIR__ . '/uploads/' . $filename;
+        }
+
+        foreach ($candidates as $p) {
+            if (is_file($p)) {
+                @unlink($p);
+                // once removed, break (still attempt DB delete after)
+                break;
+            }
+        }
+    }
+
+    // Delete document permissions first (foreign key constraint)
+    $conn->query("DELETE FROM document_permissions WHERE document_id = $docId");
+    
+    // Delete document record
+    $conn->query("DELETE FROM documents WHERE id = $docId");
+
+    $_SESSION['view_success'] = "Document has been deleted successfully.";
     header("Location: View_Records.php");
     exit;
 }
@@ -74,7 +114,7 @@ $archivedDocs = $conn->query("
         }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
     

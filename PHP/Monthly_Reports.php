@@ -1,11 +1,7 @@
 <?php
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
+// Initialize RBAC and check page access
+require_once 'rbac_middleware.php';
+RBACMiddleware::checkPageAccess();
 
 include 'db_connect.php';
 include 'partials/functions.php';
@@ -33,7 +29,7 @@ $pendingApprovals = getPendingItems($conn);
     }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
     
@@ -96,13 +92,11 @@ $pendingApprovals = getPendingItems($conn);
                     <div class="bg-white border rounded p-2">
                         <canvas id="lineChart" class="!h-48"></canvas>
                     </div>
-                </div>
-
                 <!-- Table -->
                 <div class="overflow-x-auto mb-4">
                     <table class="w-full border text-sm" id="monthTable">
                         <thead>
-                            <tr class="bg-gray-200">
+                            <tr class="bg-custom">
                                 <th class="border px-2 py-1">Day</th>
                                 <th class="border px-2 py-1">Documents</th>
                                 <th class="border px-2 py-1">Visitors</th>

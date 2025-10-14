@@ -105,7 +105,7 @@ $users = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
     <?php include 'partials/styles.php'; ?>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body style="background-color: #eeeeee;" class="bg-custom flex h-screen overflow-hidden">
     
     <?php include 'partials/sidebar.php'; ?>
 
