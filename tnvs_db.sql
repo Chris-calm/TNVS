@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 06, 2025 at 12:58 AM
+-- Generation Time: Oct 09, 2025 at 02:10 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -42,8 +42,8 @@ CREATE TABLE `case_records` (
 --
 
 INSERT INTO `case_records` (`id`, `title`, `complainant`, `respondent`, `status`, `details`, `created_at`) VALUES
-(3, 'Drunk Driver', 'Almost hit a citizen', 'Passenger', 'open', 'aslfhaslofihwesf', '2025-10-05 05:02:57'),
-(4, 'asdsad', 'asdasd', 'asdasdasd', 'open', 'asdasdasasd', '2025-10-05 06:53:47');
+(5, 'asd', 'asd', 'asd', 'open', 'asddw', '2025-10-09 09:49:19'),
+(6, 'Driver', 'Passenger', 'Police', 'open', 'Me hurt ahooga ahooga', '2025-10-09 09:56:29');
 
 -- --------------------------------------------------------
 
@@ -97,7 +97,8 @@ CREATE TABLE `documents` (
 
 INSERT INTO `documents` (`id`, `title`, `filename`, `filepath`, `uploaded_by`, `uploaded_at`, `is_archived`) VALUES
 (21, 'PMact', '1759640390_PMactivity.docx', 'uploads/1759640390_PMactivity.docx', 'Admin', '2025-10-05 04:59:50', 0),
-(22, 'RCA', '1759700362_Root-Cause-Analysis.docx', 'uploads/1759700362_Root-Cause-Analysis.docx', 'Admin', '2025-10-05 21:39:22', 0);
+(22, 'RCA', '1759700362_Root-Cause-Analysis.docx', 'uploads/1759700362_Root-Cause-Analysis.docx', 'Admin', '2025-10-05 21:39:22', 0),
+(23, 's', '1760003607_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', '../uploads/1760003607_PROJECT-MANAGEMENT-PLAN-TAPOS-NA.docx', 'admin', '2025-10-09 09:53:27', 0);
 
 -- --------------------------------------------------------
 
@@ -127,7 +128,13 @@ INSERT INTO `document_actions` (`id`, `document_id`, `user_role`, `action_type`,
 (16, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-05 22:04:53', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
 (17, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-05 22:07:08', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
 (18, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-05 22:07:45', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
-(19, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-05 22:12:02', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0');
+(19, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-05 22:12:02', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(20, 21, 'Admin', 'Edit', 'Permissions updated for document ID: 21', '2025-10-07 02:09:26', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(21, 21, 'Admin', 'Edit', 'Permissions updated for document ID: 21', '2025-10-07 02:12:08', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(22, 21, 'Admin', 'Edit', 'Permissions updated for document ID: 21', '2025-10-07 02:12:08', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(23, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:12:20', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(24, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:13:10', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0'),
+(25, 22, 'Admin', 'Edit', 'Permissions updated for document ID: 22', '2025-10-07 02:21:54', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0');
 
 -- --------------------------------------------------------
 
@@ -148,8 +155,7 @@ CREATE TABLE `document_permissions` (
 --
 
 INSERT INTO `document_permissions` (`id`, `document_id`, `user_role`, `permission_type`, `created_at`) VALUES
-(315, 21, 'Admin', 'View', '2025-10-05 05:00:22'),
-(340, 22, 'Admin', 'View', '2025-10-05 22:12:32');
+(388, 22, 'Admin', 'View', '2025-10-07 02:22:00');
 
 -- --------------------------------------------------------
 
@@ -175,9 +181,9 @@ CREATE TABLE `facilities` (
 
 INSERT INTO `facilities` (`facility_id`, `name`, `capacity`, `location`, `status`, `picture`, `available_date`, `available_time`, `created_at`) VALUES
 (27, 'Maple', 1, '2ND FLOOR MV', 'Approved', '0c47b381-65f4-40bd-85cf-55a29965f738.jpg', '2025-10-17', '08:58:00', '2025-10-05 04:58:44'),
-(28, 'Maple', 1, 'Top & Bottom zingzing', 'Approved', '0c47b381-65f4-40bd-85cf-55a29965f738.jpg', '2025-10-14', '10:53:00', '2025-10-05 06:53:28'),
+(28, 'Maple', 1, 'Top & Bottom zingzing', 'Pending', '0c47b381-65f4-40bd-85cf-55a29965f738.jpg', '2025-10-14', '10:53:00', '2025-10-05 06:53:28'),
 (29, 'TEST FACILITY', 1, 'Top & Bottom zingzing', 'Approved', '552688220_2265769740587794_6183573623937394502_n.jpg', '2025-10-06', '23:35:00', '2025-10-05 19:35:35'),
-(30, 'Coco Martin', 1, 'undefined', 'Pending', 'ac7ccdc4-f5a8-4b63-bad9-20b2dffeaad4.jpg', '2025-10-31', '23:44:00', '2025-10-05 19:45:01'),
+(30, 'Coco Martin', 1, 'undefined', 'Approved', 'ac7ccdc4-f5a8-4b63-bad9-20b2dffeaad4.jpg', '2025-10-31', '23:44:00', '2025-10-05 19:45:01'),
 (31, 'asdsad', 12, '1233421', 'Rejected', 'Minimalist Login Interface Design.png', '2025-10-14', '23:56:00', '2025-10-05 19:56:46'),
 (32, 'TEST FACILITY', 50, '2ND FLOOR MV', 'Under Maintenance', '552688220_2265769740587794_6183573623937394502_n.jpg', '2025-10-16', '16:34:00', '2025-10-05 21:34:05');
 
@@ -201,7 +207,8 @@ CREATE TABLE `policies` (
 --
 
 INSERT INTO `policies` (`id`, `title`, `role`, `short_desc`, `full_policy`, `created_at`) VALUES
-(3, 'Safe Conduct for Admin', 'admin-only', 'A policy for safe driving', 'A policy for safe admins', '2025-10-05 05:01:26');
+(3, 'Safe Conduct for Admin', 'administrative', 'A policy for safe driving', 'A policy for safe admins', '2025-10-05 05:01:26'),
+(4, 'Bawal ang kupal', 'administrative', 'si chris kupal', 'WALA LANG BOBO KASI SI CHRIS', '2025-10-07 02:31:30');
 
 -- --------------------------------------------------------
 
@@ -230,19 +237,49 @@ CREATE TABLE `users` (
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('super_admin','admin','employee') NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `email` varchar(255) DEFAULT NULL,
+  `profile_picture` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
--- Note: Passwords are hashed using PASSWORD_DEFAULT (bcrypt)
--- Credentials: superadmin/super123, admin/admin123, employee/employee123
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`) VALUES
-(1, 'superadmin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'super_admin', '2025-10-05 22:53:26'),
-(2, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', '2025-10-05 22:53:26'),
-(3, 'employee', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'employee', '2025-10-05 22:53:26');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `email`, `profile_picture`) VALUES
+(1, 'superadmin', '$2y$10$zD0.C64gaSWx4tYKqnwujeLu9c2JQllb7FEYiKZPN4vmR.xyiKpLy', 'super_admin', '2025-10-05 23:51:23', 'zephyra013@gmail.com', NULL),
+(2, 'admin', '$2y$10$GF5KxjPdFxsIdy7gFmpgvuPICaMZMv8rndDOxkN6ndMdrT53FPpfO', 'admin', '2025-10-05 23:51:23', 'casimirochris19@gmail.com', 'profile_2_1760008084.jpg'),
+(3, 'employee', '$2y$10$ybgIDkNQSxBi/NrDGZBhy.t.gngwvcJqUvZz987Q1byl5SoLR1BSO', 'employee', '2025-10-05 23:51:24', '', 'profile_3_1760007799.jpg'),
+(4, 'visitor', '$2y$10$VM6GSsgtGPUh3lQjTjlI6uX5G5YpBWFTpxKlVZcB5KLjNRFgFt142', '', '2025-10-05 23:51:24', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_otps`
+--
+
+CREATE TABLE `user_otps` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `otp_code` varchar(10) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `expires_at` datetime NOT NULL,
+  `is_used` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_otps`
+--
+
+INSERT INTO `user_otps` (`id`, `user_id`, `username`, `otp_code`, `email`, `created_at`, `expires_at`, `is_used`) VALUES
+(2, 1, 'superadmin', '708918', 'zephyra013@gmail.com', '2025-10-09 11:37:47', '2025-10-09 13:42:47', 0),
+(3, 1, 'superadmin', '480209', 'zephyra013@gmail.com', '2025-10-09 11:39:45', '2025-10-09 13:44:45', 1),
+(4, 1, 'superadmin', '251790', 'zephyra013@gmail.com', '2025-10-09 11:43:47', '2025-10-09 13:48:47', 0),
+(5, 1, 'superadmin', '459804', 'zephyra013@gmail.com', '2025-10-09 11:49:21', '2025-10-09 13:54:21', 1),
+(6, 2, 'admin', '617948', 'casimirochris19@gmail.com', '2025-10-09 11:50:22', '2025-10-09 13:55:22', 1),
+(7, 1, 'superadmin', '170023', 'zephyra013@gmail.com', '2025-10-09 12:02:37', '2025-10-09 14:07:37', 1);
 
 -- --------------------------------------------------------
 
@@ -274,8 +311,8 @@ CREATE TABLE `visitors` (
 --
 
 INSERT INTO `visitors` (`id`, `name`, `contact`, `purpose`, `visit_date`, `visit_time`, `person_to_visit`, `created_at`, `checkin`, `checkout`, `status`, `picture_path`, `request_status`, `pass_id`, `approved_at`, `denied_at`) VALUES
-(6, 'Maple', '0994591242', 'makakakita ng dreamybull', '2025-10-09', '09:03:00', 'Ako syempre ako may ari eh', '2025-10-05 05:03:43', NULL, '2025-10-05 07:03:52', 'Checked-out', 'uploads/visitor_pictures/68e1fc2f27fe8_552688220_2265769740587794_6183573623937394502_n.jpg', 'pending', NULL, NULL, NULL),
-(7, 'Maple', '0994591242', 'makakakita ng dreamybull', '2025-10-18', '10:54:00', 'sdada', '2025-10-05 06:54:42', NULL, NULL, 'Checked-in', 'uploads/visitor_pictures/68e216324e5c1_552688220_2265769740587794_6183573623937394502_n.jpg', 'pending', NULL, NULL, NULL);
+(7, 'bobo chris', '0994591242', 'makakakita ng dreamybull', '2025-10-18', '10:54:00', 'sdada', '2025-10-05 06:54:42', '2025-10-06 18:46:22', '2025-10-07 04:39:58', '', 'uploads/visitor_pictures/68e216324e5c1_552688220_2265769740587794_6183573623937394502_n.jpg', 'pending', NULL, NULL, NULL),
+(8, 'Maple', 'asdsad1231', '123131sd', '2025-10-18', '09:32:00', 'Ako syempre ako may ari eh', '2025-10-06 13:32:19', NULL, NULL, 'Checked-in', 'uploads/visitor_pictures/68e3c4e360555_ac7ccdc4-f5a8-4b63-bad9-20b2dffeaad4.jpg', 'pending', NULL, NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -342,6 +379,16 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `username` (`username`);
 
 --
+-- Indexes for table `user_otps`
+--
+ALTER TABLE `user_otps`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_username` (`username`),
+  ADD KEY `idx_otp_code` (`otp_code`),
+  ADD KEY `idx_expires_at` (`expires_at`);
+
+--
 -- Indexes for table `visitors`
 --
 ALTER TABLE `visitors`
@@ -355,7 +402,7 @@ ALTER TABLE `visitors`
 -- AUTO_INCREMENT for table `case_records`
 --
 ALTER TABLE `case_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `contracts`
@@ -367,31 +414,31 @@ ALTER TABLE `contracts`
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `document_actions`
 --
 ALTER TABLE `document_actions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `document_permissions`
 --
 ALTER TABLE `document_permissions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=341;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=389;
 
 --
 -- AUTO_INCREMENT for table `facilities`
 --
 ALTER TABLE `facilities`
-  MODIFY `facility_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `facility_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `policies`
 --
 ALTER TABLE `policies`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `reservations`
@@ -403,13 +450,19 @@ ALTER TABLE `reservations`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `user_otps`
+--
+ALTER TABLE `user_otps`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `visitors`
 --
 ALTER TABLE `visitors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Constraints for dumped tables
@@ -426,6 +479,12 @@ ALTER TABLE `document_permissions`
 --
 ALTER TABLE `reservations`
   ADD CONSTRAINT `reservations_ibfk_1` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`facility_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_otps`
+--
+ALTER TABLE `user_otps`
+  ADD CONSTRAINT `user_otps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -108,23 +108,37 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-      background: #f5f5f5;
+      background: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       padding: 20px;
+      overflow: hidden;
+    }
+
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
     }
 
     .login-container {
       display: flex;
       width: 100%;
       max-width: 1000px;
-      background: #fff;
+      background: rgba(74, 144, 226, 0.8);
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(74, 144, 226, 0.2);
       overflow: hidden;
       min-height: 550px;
+      position: relative;
+      z-index: 1;
     }
 
     .login-left {
@@ -133,17 +147,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       display: flex;
       flex-direction: column;
       justify-content: center;
+      background: rgba(74, 144, 226, 0.6);
+      backdrop-filter: blur(5px);
     }
 
     .login-right {
       flex: 1;
-      background: linear-gradient(135deg, #4A90E2 0%, #0066CC 100%);
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       padding: 60px 50px;
-      color: #fff;
+      color: #2c3e50;
       position: relative;
       overflow: hidden;
     }
@@ -178,13 +196,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     .logo-section h1 {
       font-size: 28px;
       font-weight: 600;
-      color: #2c3e50;
+      color: #fff;
       margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
     .logo-section p {
       font-size: 14px;
-      color: #7f8c8d;
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .form-group {
@@ -195,30 +214,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       display: block;
       font-size: 14px;
       font-weight: 500;
-      color: #2c3e50;
+      color: #fff;
       margin-bottom: 8px;
     }
 
     .form-group input {
       width: 100%;
       padding: 12px 16px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid rgba(255, 255, 255, 0.3);
       border-radius: 8px;
       font-size: 15px;
-      color: #2c3e50;
+      color: #fff;
       transition: all 0.3s ease;
-      background: #fafafa;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(5px);
     }
 
     .form-group input:focus {
       outline: none;
-      border-color: #4A90E2;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
     }
 
     .form-group input::placeholder {
-      color: #bdc3c7;
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .btn-login {
@@ -279,13 +299,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 20px;
+      color: #2c3e50;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .right-content p {
       font-size: 16px;
       line-height: 1.6;
-      opacity: 0.95;
+      color: #34495e;
+      opacity: 0.9;
       margin-bottom: 30px;
     }
 
@@ -300,21 +322,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.4);
       padding: 12px 16px;
       border-radius: 8px;
       backdrop-filter: blur(10px);
+      color: #2c3e50;
     }
 
     .feature-icon {
       width: 24px;
       height: 24px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(74, 144, 226, 0.3);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
+      color: #2c3e50;
     }
 
     @media (max-width: 768px) {
@@ -338,6 +362,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   </style>
 </head>
 <body>
+  <div id="particles-js"></div>
   <div class="login-container">
     <div class="login-left">
       <div class="logo-section">
@@ -381,12 +406,117 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <div class="login-right">
       <div class="right-content">
-        <img src="../PICTURES/Black and White Circular Art & Design Logo.png" alt="TNVS Logo">
+        <img src="../PICTURES/Black and White Circular Art & Design Logo1.png" alt="TNVS Logo">
         <h2>TNVS</h2>
         <p>Transport Network Vehicle System</p>
         </div>
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script>
+    particlesJS('particles-js', {
+      "particles": {
+        "number": {
+          "value": 80,
+          "density": {
+            "enable": true,
+            "value_area": 800
+          }
+        },
+        "color": {
+          "value": "#4A90E2"
+        },
+        "shape": {
+          "type": "circle",
+          "stroke": {
+            "width": 0,
+            "color": "#000000"
+          }
+        },
+        "opacity": {
+          "value": 0.5,
+          "random": false,
+          "anim": {
+            "enable": false,
+            "speed": 1,
+            "opacity_min": 0.1,
+            "sync": false
+          }
+        },
+        "size": {
+          "value": 3,
+          "random": true,
+          "anim": {
+            "enable": false,
+            "speed": 40,
+            "size_min": 0.1,
+            "sync": false
+          }
+        },
+        "line_linked": {
+          "enable": true,
+          "distance": 150,
+          "color": "#4A90E2",
+          "opacity": 0.4,
+          "width": 1
+        },
+        "move": {
+          "enable": true,
+          "speed": 6,
+          "direction": "none",
+          "random": false,
+          "straight": false,
+          "out_mode": "out",
+          "bounce": false,
+          "attract": {
+            "enable": false,
+            "rotateX": 600,
+            "rotateY": 1200
+          }
+        }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": {
+          "onhover": {
+            "enable": true,
+            "mode": "repulse"
+          },
+          "onclick": {
+            "enable": true,
+            "mode": "push"
+          },
+          "resize": true
+        },
+        "modes": {
+          "grab": {
+            "distance": 400,
+            "line_linked": {
+              "opacity": 1
+            }
+          },
+          "bubble": {
+            "distance": 400,
+            "size": 40,
+            "duration": 2,
+            "opacity": 8,
+            "speed": 3
+          },
+          "repulse": {
+            "distance": 200,
+            "duration": 0.4
+          },
+          "push": {
+            "particles_nb": 4
+          },
+          "remove": {
+            "particles_nb": 2
+          }
+        }
+      },
+      "retina_detect": true
+    });
+  </script>
 </body>
 </html>
