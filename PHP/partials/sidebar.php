@@ -166,7 +166,7 @@ try {
 
         <?php if (RBACMiddleware::hasPermission('view_statistics')): ?>
         <li class="side-menu-top">
-            <a href="../PHP/Statistics.php" class="dropdown-toggle">
+            <a href="../PHP/Statistics.php">
                 <i class='bx bxs-circle-three-quarter'></i>
                 <span class="text">Statistics</span>
             </a>
@@ -175,7 +175,7 @@ try {
 
         <?php if (RBACMiddleware::hasPermission('manage_users')): ?>
         <li class="side-menu-top">
-            <a href="../PHP/Role_Management.php" class="dropdown-toggle">
+            <a href="../PHP/Role_Management.php">
                 <i class='bx bxs-user-account'></i>
                 <span class="text">Role Management</span>
             </a>
@@ -184,7 +184,7 @@ try {
 
         <?php if (RBACMiddleware::hasPermission('system_admin')): ?>
         <li class="side-menu-top">
-            <a href="../PHP/Settings.php" class="dropdown-toggle">
+            <a href="../PHP/Settings.php">
                 <i class='bx bxs-cog'></i>
                 <span class="text">Settings</span>
             </a>
