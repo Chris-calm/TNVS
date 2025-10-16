@@ -35,7 +35,6 @@ try {
         <span class="text" style="font-size: 14px; font-weight: 600;">Transport Network Vehicle System</span>
     </a>
 
-    <!-- Profile Status Section -->
     <div class="profile-status">
         <div class="profile-info">
             <div class="profile-avatar">
@@ -201,3 +200,101 @@ try {
         </li>
     </ul>
 </section>
+
+<style>
+    /* Basic dropdown structure */
+    #sidebar .side-menu.top li.dropdown {
+        position: relative;
+        padding-right: 10px;
+    }
+
+    /* Set z-index ONLY when the dropdown is active to bring it to the front */
+    #sidebar .side-menu.top li.dropdown.open {
+        z-index: 10;
+    }
+
+    /* Dropdown menu hidden by default */
+    #sidebar .side-menu.top li.dropdown .dropdown-menu {
+        display: none;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* When dropdown is open, position it absolutely to cover the full width */
+    #sidebar .side-menu.top li.dropdown.open .dropdown-menu {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #e8e8e8;
+        animation: slideDown 0.3s ease;
+        padding: 8px 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Dropdown items styling */
+    #sidebar .side-menu.top li.dropdown.open .dropdown-menu li a {
+        display: block;
+        padding: 8px 20px 8px 50px;
+        color: #666;
+        text-decoration: none;
+        font-size: 13px;
+    }
+
+    /* Ensure sidebar allows scrolling if content overflows */
+    #sidebar {
+        overflow-y: auto;
+        height: 100vh;
+        width: 290px;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the main sidebar element
+    const sidebar = document.getElementById('sidebar');
+
+    document.addEventListener('click', function(e) {
+        const toggle = e.target.closest('.dropdown-toggle');
+        
+        if (toggle) {
+            e.preventDefault();
+            
+            const dropdown = toggle.closest('.dropdown');
+            
+            // Close all other open dropdowns first
+            document.querySelectorAll('#sidebar .dropdown.open').forEach(function(item) {
+                if (item !== dropdown) {
+                    item.classList.remove('open');
+                }
+            });
+            
+            // Toggle the clicked dropdown
+            dropdown.classList.toggle('open');
+
+            // --- NEW LOGIC TO CONTROL SCROLLBAR ---
+            // Check if any dropdown is currently open
+            if (document.querySelector('#sidebar .dropdown.open')) {
+                // If a dropdown is open, hide the sidebar's scrollbar
+                sidebar.style.overflowY = 'hidden';
+            } else {
+                // If no dropdowns are open, restore the default scrollbar behavior
+                sidebar.style.overflowY = 'auto';
+            }
+        }
+    });
+});
+</script>
