@@ -21,3 +21,6 @@ Email Log Started - TNVS OTP System
 2025-10-14 03:52:57 - ✅ Gmail SMTP SUCCESS! Email sent to: zephyra013@gmail.com (User: superadmin, OTP: 932588)
 2025-10-14 05:02:25 - ✅ Gmail SMTP SUCCESS! Email sent to: zephyra013@gmail.com (User: superadmin, OTP: 848763)
 2025-10-14 09:30:08 - ✅ Gmail SMTP SUCCESS! Email sent to: zephyra013@gmail.com (User: superadmin, OTP: 475090)
+2025-10-18 06:18:26 - ✅ Gmail SMTP SUCCESS! Email sent to: zephyra013@gmail.com (User: test_user, OTP: 360238)
+2025-10-18 06:19:44 - ✅ Gmail SMTP SUCCESS! Email sent to: admin@tnvs.com (User: superadmin, OTP: 484664)
+2025-10-18 06:19:55 - ✅ Gmail SMTP SUCCESS! Email sent to: admin@tnvs.com (User: superadmin, OTP: 613345)

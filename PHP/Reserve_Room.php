@@ -19,32 +19,87 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['saveFacility'])) {
     $status = $_POST['facilityStatus'];
     $date = $_POST['facilityDate'];
     $time = $_POST['facilityTime'];
-    $picture = $_FILES['facilityPicture']['name'] ?? null;
+    $picture = null;
+    $upload_error = null;
 
-    if ($picture) {
-        $targetDir = "../uploads/";
-        if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
-        move_uploaded_file($_FILES['facilityPicture']['tmp_name'], $targetDir . $picture);
+    // Handle file upload with proper validation
+    if (isset($_FILES['facilityPicture']) && $_FILES['facilityPicture']['error'] === UPLOAD_ERR_OK) {
+        $uploadedFile = $_FILES['facilityPicture'];
+        $originalName = $uploadedFile['name'];
+        $tmpName = $uploadedFile['tmp_name'];
+        $fileSize = $uploadedFile['size'];
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $fileType = mime_content_type($tmpName);
+        
+        if (!in_array($fileType, $allowedTypes)) {
+            $upload_error = "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.";
+        } elseif ($fileSize > 5 * 1024 * 1024) { // 5MB limit
+            $upload_error = "File size too large. Maximum 5MB allowed.";
+        } else {
+            // Generate unique filename to prevent conflicts
+            $fileExtension = pathinfo($originalName, PATHINFO_EXTENSION);
+            $picture = time() . '_' . uniqid() . '.' . $fileExtension;
+            
+            // Use absolute path for upload directory
+            $targetDir = dirname(__DIR__) . "/uploads/";
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            
+            $targetPath = $targetDir . $picture;
+            
+            if (!move_uploaded_file($tmpName, $targetPath)) {
+                $upload_error = "Failed to upload file. Please try again.";
+                $picture = null;
+            }
+        }
+    } elseif (isset($_FILES['facilityPicture']) && $_FILES['facilityPicture']['error'] !== UPLOAD_ERR_NO_FILE) {
+        // Handle upload errors
+        switch ($_FILES['facilityPicture']['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                $upload_error = "File size exceeds maximum allowed size.";
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $upload_error = "File upload was interrupted. Please try again.";
+                break;
+            default:
+                $upload_error = "File upload failed. Please try again.";
+        }
     }
 
-    if ($id) {
-        // **FIXED:** Edit facility - Using WHERE facility_id=?
-        if ($picture) {
-            $stmt = $conn->prepare("UPDATE facilities SET name=?, capacity=?, location=?, available_date=?, available_time=?, picture=?, status=? WHERE facility_id=?");
-            $stmt->bind_param("sisssssi", $name, $capacity, $location, $date, $time, $picture, $status, $id);
-        } else {
-            $stmt = $conn->prepare("UPDATE facilities SET name=?, capacity=?, location=?, available_date=?, available_time=?, status=? WHERE facility_id=?");
-            $stmt->bind_param("sissssi", $name, $capacity, $location, $date, $time, $status, $id);
-        }
-        $stmt->execute();
+    // Only proceed if there's no upload error
+    if ($upload_error) {
+        $_SESSION['facility_error'] = $upload_error;
     } else {
-        // Add facility - Always set status to 'Pending' for approval workflow
-        $stmt = $conn->prepare("INSERT INTO facilities (name, capacity, location, available_date, available_time, picture, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
-        $stmt->bind_param("sissss", $name, $capacity, $location, $date, $time, $picture);
-        $stmt->execute();
-        
-        // Set success message for new facility
-        $_SESSION['facility_success'] = "Facility '$name' has been submitted and is pending approval.";
+        if ($id) {
+            // **FIXED:** Edit facility - Using WHERE facility_id=?
+            if ($picture) {
+                $stmt = $conn->prepare("UPDATE facilities SET name=?, capacity=?, location=?, available_date=?, available_time=?, picture=?, status=? WHERE facility_id=?");
+                $stmt->bind_param("sisssssi", $name, $capacity, $location, $date, $time, $picture, $status, $id);
+            } else {
+                $stmt = $conn->prepare("UPDATE facilities SET name=?, capacity=?, location=?, available_date=?, available_time=?, status=? WHERE facility_id=?");
+                $stmt->bind_param("sissssi", $name, $capacity, $location, $date, $time, $status, $id);
+            }
+            
+            if ($stmt->execute()) {
+                $_SESSION['facility_success'] = "Facility '$name' has been updated successfully.";
+            } else {
+                $_SESSION['facility_error'] = "Failed to update facility. Please try again.";
+            }
+        } else {
+            // Add facility - Always set status to 'Pending' for approval workflow
+            $stmt = $conn->prepare("INSERT INTO facilities (name, capacity, location, available_date, available_time, picture, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
+            $stmt->bind_param("sissss", $name, $capacity, $location, $date, $time, $picture);
+            
+            if ($stmt->execute()) {
+                $_SESSION['facility_success'] = "Facility '$name' has been submitted and is pending approval.";
+            } else {
+                $_SESSION['facility_error'] = "Failed to add facility. Please try again.";
+            }
+        }
     }
     
     if (isset($stmt)) {
@@ -158,13 +213,17 @@ if ($facility_count > 0) {
             <div class="aspect-video overflow-hidden rounded-t-lg">
               <?php 
                 $picture = $row['picture'] ?? '';
-                $imagePath = "../uploads/" . htmlspecialchars($picture);
-                $imageExists = !empty($picture) && file_exists($imagePath);
+                // Use absolute path for file existence check
+                $absoluteImagePath = dirname(__DIR__) . "/uploads/" . $picture;
+                // Use relative path for web display
+                $webImagePath = "../uploads/" . htmlspecialchars($picture);
+                $imageExists = !empty($picture) && file_exists($absoluteImagePath);
               ?>
-              <img src="<?= $imageExists ? $imagePath : 'https://via.placeholder.com/400x200?text=No+Image' ?>" 
+              <img src="<?= $imageExists ? $webImagePath : 'https://via.placeholder.com/400x200?text=No+Image' ?>" 
                    alt="Facility" 
                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                   onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                   onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'"
+                   loading="lazy">
             </div>
             <div class="p-4">
               <div class="flex items-start justify-between mb-2">
@@ -196,7 +255,7 @@ if ($facility_count > 0) {
                     data-status="<?= htmlspecialchars($row['status'] ?? '') ?>"
                     data-date="<?= $row['available_date'] ?? '' ?>"
                     data-time="<?= $row['available_time'] ?? '' ?>"
-                    data-picture="../uploads/<?= htmlspecialchars($row['picture'] ?? '') ?>">
+                    data-picture="<?= !empty($row['picture']) ? '../uploads/' . htmlspecialchars($row['picture']) : '' ?>">
                     Edit
                 </button>
 
@@ -287,6 +346,9 @@ if ($facility_count > 0) {
   <!-- Include Success Modal -->
   <?php include 'partials/success_modal.php'; ?>
   
+  <!-- Include Error Modal -->
+  <?php include 'partials/error_modal.php'; ?>
+  
   <script>
     
     // --- Facility Modal (Add/Edit) Logic ---
@@ -367,8 +429,14 @@ if ($facility_count > 0) {
 
     // Show success modal if there's a success message
     <?php if (isset($_SESSION['facility_success'])): ?>
-      showSuccessModal('Facility Added!', '<?= addslashes($_SESSION['facility_success']) ?>');
+      showSuccessModal('Success!', '<?= addslashes($_SESSION['facility_success']) ?>');
       <?php unset($_SESSION['facility_success']); ?>
+    <?php endif; ?>
+    
+    // Show error modal if there's an error message
+    <?php if (isset($_SESSION['facility_error'])): ?>
+      showErrorModal('Upload Error', '<?= addslashes($_SESSION['facility_error']) ?>');
+      <?php unset($_SESSION['facility_error']); ?>
     <?php endif; ?>
 
   </script>

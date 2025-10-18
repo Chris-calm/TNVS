@@ -104,13 +104,17 @@ $pending_count = $result->num_rows;
             <div class="aspect-video overflow-hidden rounded-t-lg">
               <?php 
                 $picture = $row['picture'] ?? '';
-                $imagePath = "../uploads/" . htmlspecialchars($picture);
-                $imageExists = !empty($picture) && file_exists($imagePath);
+                // Use absolute path for file existence check
+                $absoluteImagePath = dirname(__DIR__) . "/uploads/" . $picture;
+                // Use relative path for web display
+                $webImagePath = "../uploads/" . htmlspecialchars($picture);
+                $imageExists = !empty($picture) && file_exists($absoluteImagePath);
               ?>
-              <img src="<?= $imageExists ? $imagePath : 'https://via.placeholder.com/400x200?text=No+Image' ?>" 
+              <img src="<?= $imageExists ? $webImagePath : 'https://via.placeholder.com/400x200?text=No+Image' ?>" 
                    alt="Facility" 
                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                   onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                   onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'"
+                   loading="lazy">
             </div>
             <div class="p-4">
               <div class="flex items-start justify-between mb-2">
